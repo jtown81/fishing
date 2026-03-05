@@ -3,6 +3,7 @@ import { useTournamentStore } from '@modules/tournaments/tournament-store'
 import { useTeamStore } from '@modules/teams/team-store'
 import { useWeighInStore } from '@modules/weigh-ins/weigh-in-store'
 import AppShell from '@components/layout/AppShell'
+import { initDevSeedTools } from '@utils/dev-seed'
 
 export default function App() {
   const [view, setView] = useState<'dashboard' | 'statistics' | 'calcutta' | 'scoreboard' | 'reports' | 'setup' | 'teams' | 'weigh-in' | 'import-export' | 'settings'>('dashboard')
@@ -16,6 +17,9 @@ export default function App() {
   // Initialize data on mount
   useEffect(() => {
     const init = async () => {
+      // Dev tools: expose seeding utilities in console (development only)
+      initDevSeedTools()
+
       await loadTournaments()
       setInitialized(true)
     }

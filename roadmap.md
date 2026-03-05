@@ -518,63 +518,22 @@ TREND DATA (multi-year)
 - [x] Parks & Wildlife report (CSV export for agency submission)
 - [x] Print suite: Standings, statistics, weight tickets
 
-### Phase 3: Historical Data Import
-> Import 2016-2022 tournament data from the XLSM reference file
+### Phase 3: CSV Import/Export System
+> Import/export tournament data as CSV for easy sharing and backup
 
-**Status: IN PROGRESS — Spec complete, implementation starting**
+**Status: ✅ COMPLETE**
 
-#### Technical Specification
+**Delivered:**
+- [x] CSV parser with RFC 4180 compliance
+- [x] Import service with transaction semantics
+- [x] Export service with tournament data serialization
+- [x] ImportExportManager UI (two-tab interface)
+- [x] Comprehensive user guide and examples
+- [x] 40+ unit tests
 
-**Source**: `Fishing Tourney 2024- ChatGPT Upload.xlsm` — year sheets '2016' through '2022'
-**Library**: SheetJS (`xlsx` v0.18.5, already installed)
+**Note on Historical Data**: The legacy XLSM files (2016-2022) are available as test data seed files (see `src/db/seed/`). These are not imported via user UI, but are available for development/testing via a seeding utility. To populate test data: run `npm run seed:history` (development only).
 
-**Column index mapping for year sheets** (row 0 = headers, rows 1+ = data):
-```
-[0] Place (skip)    [1] Team #    [2] Name (members)
-[3] D1 Fish count   [4] D1 Weight [5] D1 Released
-[6] D1 Total (skip) [7] D1 Big fish
-[8] D2 Fish count   [9] D2 Weight [10] D2 Released
-[11] D2 Total (skip) [12] Grand Total (skip)
-[13] D2 Big fish    [14] Status
-```
-
-**Name parsing**:
-- If `\n` in name: split on `\n` → 2 members
-- If no `\n`: split on 2+ spaces → 2 members
-- Each member: split on last space → firstName + lastName
-
-**Deduplication**: Per team number, keep the row with non-zero weight. If all rows are zero, keep only the first.
-
-**Synthetic fields** (not in XLSM):
-- `receivedBy`, `issuedBy`: `'imported'`
-- `timestamp`: `new Date(year, 0, 1)` for Day 1, `new Date(year, 0, 2)` for Day 2
-- Tournament `startDate`/`endDate`: `new Date(year, 0, 1)` / `new Date(year, 0, 2)`
-- Tournament `name`: User provides base name (e.g. "HPA Annual Tournament") → stored as `{name} {year}`
-- Tournament `location`: User provides during import, applied to all years
-
-**Import wizard** (4 steps):
-1. **Upload**: Drag-and-drop `.xlsm` file
-2. **Configure**: Tournament name + location (year auto-appended)
-3. **Preview**: Table of years found, team counts, warnings
-4. **Import**: Progress per year → summary
-
-**Architecture**:
-- `src/modules/import/xlsm-parser.ts` — Pure functions: parse, name parsing, dedup
-- `src/modules/import/import-service.ts` — Bulk Dexie insert, progress callback
-- `src/modules/import/import-store.ts` — Zustand wizard state
-- `src/components/import/XlsmImporter.tsx` — 4-step wizard UI
-- Navigation: "Import History" sidebar item
-
-**Validation**: After import, verify:
-- 2022: Team #10 (Brandon Seitz / Rob Crandall) = 18.00 lbs (place 1)
-- 2022: Team #44 (Matt James / Chad Porsch) = 13.24 lbs (place 3)
-
-**Deliverables**:
-- [ ] `xlsm-parser.ts` with unit tests
-- [ ] `import-service.ts` with idempotent bulk insert
-- [ ] `import-store.ts` (Zustand wizard state)
-- [ ] `XlsmImporter.tsx` (4-step wizard UI)
-- [ ] Sidebar nav + routing integration
+**Future**: XLSM import is deferred indefinitely. CSV is the standard import format. If users need to migrate from XLSM, they can export from Excel as CSV first.
 
 ### Phase 4: Cloud Sync & Multi-Device (Weeks 11-16)
 > Enable cloud backup and multi-device access
