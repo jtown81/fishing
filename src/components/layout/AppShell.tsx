@@ -7,13 +7,14 @@ import { CalcuttaManager } from '@components/calcutta'
 import { ScoreboardDisplay } from '@components/scoreboard'
 import { ParksReportGenerator } from '@components/reports'
 import { PrintManager } from '@components/print'
+import { ImportExportManager } from '@components/import-export'
 import TournamentSetup from '@components/forms/TournamentSetup'
 import TeamList from '@components/teams/TeamList'
 import WeighInForm from '@components/weigh-in/WeighInForm'
 
 interface AppShellProps {
-  currentView: 'dashboard' | 'statistics' | 'calcutta' | 'scoreboard' | 'reports' | 'setup' | 'teams' | 'weigh-in' | 'settings'
-  setCurrentView: (view: 'dashboard' | 'statistics' | 'calcutta' | 'scoreboard' | 'reports' | 'setup' | 'teams' | 'weigh-in' | 'settings') => void
+  currentView: 'dashboard' | 'statistics' | 'calcutta' | 'scoreboard' | 'reports' | 'setup' | 'teams' | 'weigh-in' | 'import-export' | 'settings'
+  setCurrentView: (view: 'dashboard' | 'statistics' | 'calcutta' | 'scoreboard' | 'reports' | 'setup' | 'teams' | 'weigh-in' | 'import-export' | 'settings') => void
 }
 
 export default function AppShell({ currentView, setCurrentView }: AppShellProps) {
@@ -40,6 +41,8 @@ export default function AppShell({ currentView, setCurrentView }: AppShellProps)
         return <TeamList />
       case 'weigh-in':
         return <WeighInForm />
+      case 'import-export':
+        return <ImportExportManager />
       case 'settings':
         return <div className="p-6 text-gray-600">Settings coming soon</div>
       default:

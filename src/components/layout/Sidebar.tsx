@@ -1,5 +1,6 @@
 import {
   BarChart3,
+  Download,
   FileText,
   Gavel,
   LineChart,
@@ -13,15 +14,15 @@ import {
 import { useTournamentStore } from '@modules/tournaments/tournament-store'
 
 interface SidebarProps {
-  currentView: 'dashboard' | 'statistics' | 'calcutta' | 'scoreboard' | 'reports' | 'setup' | 'teams' | 'weigh-in' | 'settings'
-  setCurrentView: (view: 'dashboard' | 'statistics' | 'calcutta' | 'scoreboard' | 'reports' | 'setup' | 'teams' | 'weigh-in' | 'settings') => void
+  currentView: 'dashboard' | 'statistics' | 'calcutta' | 'scoreboard' | 'reports' | 'setup' | 'teams' | 'weigh-in' | 'import-export' | 'settings'
+  setCurrentView: (view: 'dashboard' | 'statistics' | 'calcutta' | 'scoreboard' | 'reports' | 'setup' | 'teams' | 'weigh-in' | 'import-export' | 'settings') => void
   open: boolean
   setOpen: (open: boolean) => void
 }
 
 interface NavItem {
   label: string
-  view: 'dashboard' | 'statistics' | 'calcutta' | 'scoreboard' | 'reports' | 'setup' | 'teams' | 'weigh-in' | 'settings'
+  view: 'dashboard' | 'statistics' | 'calcutta' | 'scoreboard' | 'reports' | 'setup' | 'teams' | 'weigh-in' | 'import-export' | 'settings'
   icon: React.ReactNode
   requiresTournament?: boolean
 }
@@ -73,6 +74,11 @@ const navItems: NavItem[] = [
     view: 'weigh-in',
     icon: <Weight size={20} />,
     requiresTournament: true
+  },
+  {
+    label: 'Import / Export',
+    view: 'import-export',
+    icon: <Download size={20} />
   },
   {
     label: 'Settings',

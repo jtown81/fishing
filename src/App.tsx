@@ -5,7 +5,7 @@ import { useWeighInStore } from '@modules/weigh-ins/weigh-in-store'
 import AppShell from '@components/layout/AppShell'
 
 export default function App() {
-  const [view, setView] = useState<'dashboard' | 'statistics' | 'calcutta' | 'scoreboard' | 'reports' | 'setup' | 'teams' | 'weigh-in' | 'settings'>('dashboard')
+  const [view, setView] = useState<'dashboard' | 'statistics' | 'calcutta' | 'scoreboard' | 'reports' | 'setup' | 'teams' | 'weigh-in' | 'import-export' | 'settings'>('dashboard')
   const [initialized, setInitialized] = useState(false)
 
   const currentTournament = useTournamentStore((s) => s.currentTournament)
