@@ -1,305 +1,277 @@
-# CSV Import/Export Guide
+# Import/Export Guide
 
 ## Overview
 
-The Fishing Tournament App supports importing and exporting tournament data using CSV (Comma-Separated Values) files. This allows you to:
+The Fishing Tournament Manager supports importing tournament data from CSV files and exporting existing tournaments to CSV format. This makes it easy to:
 
-- **Import** historical tournament data from spreadsheets or other systems
-- **Export** tournament data for backup, sharing, or external analysis
-- **Edit** tournament data in Excel, Google Sheets, or any text editor
+- Migrate data from other systems
+- Back up tournament data
+- Share tournaments with others
+- Edit tournament data in Excel or any spreadsheet application
 
-## CSV File Format
+## CSV Format
 
-Tournament data is organized into three sections, each with a header line starting with `#`:
+All import/export files use a simple three-section CSV format that works with Excel, Google Sheets, and any text editor.
 
 ### File Structure
 
+A CSV import file contains three sections, identified by section headers (lines starting with `#`):
+
 ```
-#TOURNAMENT
-[tournament metadata]
-
-#TEAMS
-[team roster]
-
-#WEIGH_INS
-[catch data for both days]
-```
-
-### Section 1: TOURNAMENT
-
-Contains metadata about the tournament.
-
-**Header Line:** `#TOURNAMENT`
-
-**Columns:**
-| Column | Type | Example | Required | Notes |
-|--------|------|---------|----------|-------|
-| `name` | Text | "HPA Annual Tournament" | Yes | Tournament display name |
-| `year` | Number | 2024 | Yes | Competition year |
-| `location` | Text | "Lake XYZ" | Yes | Tournament location |
-| `start_date` | Date | 2024-06-01 | Yes | Format: YYYY-MM-DD |
-| `end_date` | Date | 2024-06-02 | Yes | Format: YYYY-MM-DD |
-
-**Rules:**
-- Exactly **one tournament record** per CSV file
-- Dates must be in ISO format: `YYYY-MM-DD`
-- `start_date` must be before or equal to `end_date`
-
-**Example:**
-```csv
 #TOURNAMENT
 name,year,location,start_date,end_date
 HPA Annual Tournament,2024,Lake XYZ,2024-06-01,2024-06-02
-```
 
-### Section 2: TEAMS
-
-Lists all teams that participated in the tournament.
-
-**Header Line:** `#TEAMS`
-
-**Columns:**
-| Column | Type | Example | Required | Notes |
-|--------|------|---------|----------|-------|
-| `team_number` | Number | 1 | Yes | Unique within tournament (1-80+) |
-| `member1_first` | Text | "Brandon" | Yes | First name of member 1 |
-| `member1_last` | Text | "Seitz" | Yes | Last name of member 1 |
-| `member2_first` | Text | "Rob" | Yes | First name of member 2 |
-| `member2_last` | Text | "Crandall" | Yes | Last name of member 2 |
-| `status` | Enum | "active" | Yes | One of: `active`, `inactive`, `disqualified` |
-
-**Rules:**
-- Minimum **one team** required
-- `team_number` must be unique and positive (no duplicates)
-- Team numbers do **not** need to be consecutive
-- All member names are required (no empty fields)
-- Status is case-insensitive (normalized to lowercase internally)
-
-**Example:**
-```csv
 #TEAMS
 team_number,member1_first,member1_last,member2_first,member2_last,status
 1,Brandon,Seitz,Rob,Crandall,active
 2,John,Doe,Jane,Smith,active
 3,Matt,James,Chad,Porsch,inactive
-```
 
-### Section 3: WEIGH_INS
-
-Records fish catches for each day of the tournament.
-
-**Header Line:** `#WEIGH_INS`
-
-**Columns:**
-| Column | Type | Example | Required | Notes |
-|--------|------|---------|----------|-------|
-| `team_number` | Number | 1 | Yes | Must reference a team from TEAMS section |
-| `day` | Number | 1 | Yes | Day 1 or Day 2 (must be 1 or 2) |
-| `fish_count` | Number | 5 | Yes | Number of fish caught |
-| `raw_weight` | Decimal | 15.20 | Yes | Total weight in pounds (max 2 decimals) |
-| `fish_released` | Number | 2 | Yes | Number of fish released back to water |
-| `big_fish` | Decimal | 4.50 | Optional | Weight of largest single fish (omit if none recorded) |
-
-**Rules:**
-- Each team may have **0, 1, or 2 weigh-in records** (one per day maximum)
-- `day` value must be `1` or `2` only
-- `fish_count` ≥ 0
-- `raw_weight` ≥ 0, with maximum 2 decimal places
-- `fish_released` ≤ `fish_count` (cannot release more than caught)
-- `big_fish` is **optional**; if provided, must be ≤ `raw_weight`
-- Team numbers in weigh-ins must exist in the TEAMS section
-- No duplicate entries (same team_number + day)
-
-**Example:**
-```csv
 #WEIGH_INS
 team_number,day,fish_count,raw_weight,fish_released,big_fish
 1,1,5,15.20,2,4.50
 1,2,4,12.80,3,4.20
 2,1,6,18.00,1,5.25
 2,2,5,16.50,2,5.10
-3,1,4,13.24,2,4.80
-3,2,3,10.50,1,3.90
+3,1,0,0,0,
 ```
 
-## Minimal Valid CSV
+### Section 1: TOURNAMENT
 
-The simplest valid import file with one team and one day of weigh-ins:
+**Header line:** `#TOURNAMENT`
 
-```csv
-#TOURNAMENT
-name,year,location,start_date,end_date
-Test Tournament,2024,Anywhere,2024-01-01,2024-01-02
+**Required columns:**
+| Column | Type | Format | Example |
+|--------|------|--------|---------|
+| `name` | text | Tournament display name | "HPA Annual Tournament" |
+| `year` | number | Competition year | 2024 |
+| `location` | text | Tournament location | "Lake XYZ" |
+| `start_date` | date | YYYY-MM-DD format | 2024-06-01 |
+| `end_date` | date | YYYY-MM-DD format | 2024-06-02 |
 
-#TEAMS
-team_number,member1_first,member1_last,member2_first,member2_last,status
-1,John,Doe,Jane,Smith,active
+**Rules:**
+- Exactly one tournament per CSV file
+- Start date must be before or equal to end date
+- Year must be between 1900 and 2100
 
-#WEIGH_INS
-team_number,day,fish_count,raw_weight,fish_released,big_fish
-1,1,0,0,0,
-```
+### Section 2: TEAMS
 
-## Advanced Features
+**Header line:** `#TEAMS`
 
-### Quoted Fields (with commas or special characters)
+**Required columns:**
+| Column | Type | Format | Example |
+|--------|------|--------|---------|
+| `team_number` | number | Unique team ID (1-80+) | 1 |
+| `member1_first` | text | First name of member 1 | "Brandon" |
+| `member1_last` | text | Last name of member 1 | "Seitz" |
+| `member2_first` | text | First name of member 2 | "Rob" |
+| `member2_last` | text | Last name of member 2 | "Crandall" |
+| `status` | enum | active, inactive, or disqualified | "active" |
 
-If a field contains a comma or newline, enclose it in double quotes:
+**Rules:**
+- Minimum 1 team required
+- Team numbers must be unique and positive (no duplicates, no zeros)
+- Member names required (cannot be empty)
+- Status is case-insensitive (automatically normalized to lowercase)
 
-```csv
-"Tournament, Inc.",2024,"Lake, State",2024-01-01,2024-01-02
-"Doe, Jr.","Smith, III"
-```
+### Section 3: WEIGH_INS
 
-### Optional Day 2 Weigh-Ins
+**Header line:** `#WEIGH_INS`
 
-Teams that didn't fish Day 2 (DNF) can be marked with `inactive` status and have no Day 2 weigh-in:
+**Columns:**
+| Column | Type | Format | Required | Example |
+|--------|------|--------|----------|---------|
+| `team_number` | number | Team ID from TEAMS section | Yes | 1 |
+| `day` | number | 1 or 2 only | Yes | 1 |
+| `fish_count` | number | Number of fish caught (≥0) | Yes | 5 |
+| `raw_weight` | number | Total weight in pounds (2 decimals) | Yes | 15.20 |
+| `fish_released` | number | Fish released (≤ fish_count) | Yes | 2 |
+| `big_fish` | number | Largest single fish weight | Optional | 4.50 |
 
-```csv
-#TEAMS
-team_number,member1_first,member1_last,member2_first,member2_last,status
-1,John,Doe,Jane,Smith,active
-2,Bob,Jones,Alice,Brown,inactive
+**Rules:**
+- Each team can have 0, 1, or 2 weigh-in records (one per day)
+- Day must be 1 or 2
+- Fish count, weight, and released must be non-negative
+- Fish released cannot exceed fish count
+- Big fish weight cannot exceed total raw weight
+- If team has no weigh-ins, that's okay (team marked as DNF)
+- If team missing Day 2 data, Day 2 is treated as no-show
+- Team numbers in weigh-ins must exist in TEAMS section
 
-#WEIGH_INS
-team_number,day,fish_count,raw_weight,fish_released,big_fish
-1,1,5,15.20,1,4.50
-1,2,4,12.80,2,4.20
-2,1,6,18.00,1,5.25
-```
+## Importing Tournament Data
 
-Team 2 has DNF (inactive) status and only a Day 1 weigh-in — this is valid.
+### Step-by-Step Import Process
 
-### Missing Big Fish Data
+1. **Prepare CSV File**
+   - Create or download a CSV file in the format above
+   - Double-check for errors (especially dates, team numbers, fish released)
 
-If big fish weight was not recorded, leave the field empty:
+2. **Open Import Tab**
+   - Click "Import / Export" in the sidebar
+   - Click the "Import Tournament" tab
 
-```csv
-team_number,day,fish_count,raw_weight,fish_released,big_fish
-1,1,5,15.00,2,
-2,1,3,10.50,1,4.25
-```
+3. **Select File**
+   - Drag and drop your CSV file into the upload area, OR
+   - Click "Choose File" and select your CSV
 
-## How to Import
+4. **Review & Validate**
+   - The app parses and validates your data
+   - If errors found, they're displayed with explanations
+   - Fix the CSV and upload again
+   - Warnings (non-fatal issues) allow you to proceed
 
-### Step 1: Prepare Your CSV File
+5. **Confirm Import**
+   - Review tournament name, year, team count
+   - Click "Confirm & Import"
+   - Tournament is added to your list
 
-- Create a CSV file in Excel, Google Sheets, or a text editor
-- Follow the format specification above
-- Save as `.csv` format
+### Common Errors & Fixes
 
-### Step 2: Upload to the App
+**"Tournament year must be between 1900 and 2100"**
+- Check the year column - it should be a 4-digit number (2024, not 24)
 
-1. Navigate to **Import / Export** in the sidebar
-2. Click **Select CSV File** or drag-and-drop a CSV file
-3. The app will automatically parse and validate the file
+**"fish_released cannot exceed fish_count"**
+- You have more fish released than caught (impossible!)
+- Check row: fish_count value might be wrong
 
-### Step 3: Review & Confirm
+**"big_fish cannot exceed raw_weight"**
+- The largest single fish weighs more than the total catch
+- Check the big_fish and raw_weight values
 
-If the file is valid:
-- Preview shows tournament name, year, location
-- Summary displays team count and weigh-in count
-- Click **Confirm Import** to save to the database
+**"Duplicate team number"**
+- You have two teams with the same number
+- Team numbers must be unique within the tournament
 
-If errors appear:
-- Review the error messages (e.g., "fish_released cannot exceed fish_count")
-- Fix the CSV file and re-upload
-- Common issues are listed below
+**"Team X not found in teams list"**
+- A weigh-in references a team that doesn't exist in the TEAMS section
+- Check the team_number in both sections
 
-## How to Export
+**"Weigh-in for team X Day 1 has 0 fish but team status is active"**
+- Active teams should have at least some data
+- Either add weigh-in data or change team status to "inactive" or "dnf"
 
-### Export an Existing Tournament
+## Exporting Tournament Data
 
-1. Navigate to **Import / Export** in the sidebar
-2. Select the **Export** tab
-3. Choose a tournament from the dropdown
-4. Click **Download CSV**
-5. The CSV file will be saved to your downloads folder
+### Step-by-Step Export Process
 
-The exported CSV contains all tournament data and can be:
-- Edited and re-imported
-- Shared with other users
-- Archived for historical records
-- Converted to other formats
+1. **Open Export Tab**
+   - Click "Import / Export" in the sidebar
+   - Click the "Export Tournament" tab
 
-## Troubleshooting
+2. **Select Tournament**
+   - Choose the tournament from the dropdown list
+   - Preview shows tournament name, location, and date range
 
-### Common Validation Errors
+3. **Download CSV**
+   - Click "Download CSV"
+   - File downloads automatically to your computer
+   - Filename format: `tournament-{year}-{name-slugified}.csv`
 
-| Error | Cause | Solution |
-|-------|-------|----------|
-| `year must be a number` | Year column contains text | Ensure year is numeric, e.g., `2024` not `"2024"` |
-| `start_date must be in YYYY-MM-DD format` | Date format incorrect | Use ISO format: `2024-01-15` (not `1/15/2024` or `01-15-24`) |
-| `team_number must be a positive integer` | Team number is 0, negative, or text | Team numbers must be positive integers: 1, 2, 3, etc. |
-| `Duplicate team_number: 5` | Same team number used twice | Ensure each team has a unique number |
-| `fish_released cannot exceed fish_count` | Released more fish than caught | `fish_released` must be ≤ `fish_count` |
-| `big_fish cannot exceed raw_weight` | Big fish weight > total weight | Single fish cannot weigh more than total catch |
-| `Weigh-in references non-existent team_number: 10` | Weigh-in team number doesn't exist in TEAMS section | Add team 10 to the TEAMS section, or fix the weigh-in |
+### Using Exported Files
+
+**Edit in Excel:**
+1. Open the CSV in Excel
+2. Make edits (team names, weigh-in data, etc.)
+3. Save as CSV (File → Save As → CSV UTF-8)
+4. Import back into the app
+
+**Share with Others:**
+1. Email the CSV file
+2. Other users can import it into their own tournament manager
+3. CSV format is human-readable and editable
+
+**Backup:**
+1. Export all tournaments regularly
+2. Store CSV files in cloud storage or external drive
+3. Re-import if data is ever lost
+
+## Tips & Tricks
 
 ### Excel Tips
 
-**Preserve CSV Format:**
-- Save as "CSV (Comma delimited)" not "Excel Workbook (.xlsx)"
-- On Mac: File → Save As → Format: **CSV (Comma delimited)**
-- On Windows: File → Save As → Save as type: **CSV (Comma delimited)**
+**Prevent Leading Zeros from Being Removed:**
+- If you create a CSV in Excel, numbers like "01" might become "1"
+- Solution: After opening in Excel, right-click column → Format Cells → Text
+- Or add a leading apostrophe: `'01`
 
-**Avoid Date Auto-Conversion:**
-- Excel may convert `2024-01-01` to a different format
-- To prevent this, format the date column as **Text** before entering dates
-- Or prefix dates with an apostrophe: `'2024-01-01` (apostrophe won't be saved)
+**Keep Dates Formatted Correctly:**
+- Excel might auto-format dates (Jan 1, 2024 instead of 2024-01-01)
+- Solution: Format column as Text before editing dates
 
-**Copy/Paste from Spreadsheet:**
-- Can copy data from an Excel spreadsheet and paste into a text editor
-- Ensure the structure matches the CSV format (headers and three sections)
+**Adding New Teams:**
+1. Open exported CSV in Excel
+2. Add new rows in TEAMS section
+3. Update team_number to be unique
+4. Save as CSV
+5. Import into app
 
-### Large Files
+### Handling Missing Data
 
-For tournaments with 100+ teams, the import may take a few seconds. The app will show a progress indicator.
+**Teams with No Weigh-Ins:**
+- Leave WEIGH_INS section empty for that team
+- Team will be imported but have no day totals
+- Mark status as "inactive" or "dnf"
 
-## Data Integrity
+**Teams Missing Day 2:**
+- Add only Day 1 weigh-in for that team
+- Day 2 will be treated as no-show (zero weight)
+- Team will have standings based on Day 1 only
 
-When you import a CSV:
+**Partial Fish Data:**
+- If you don't have big_fish recorded, leave that column blank
+- App will calculate based on raw_weight only
 
-1. **No automatic conversion** — Data is imported exactly as-is
-2. **Validation required** — All constraints (numeric ranges, date formats, etc.) are checked before import
-3. **All-or-nothing** — If any record fails validation, the entire import is rejected
-4. **Metadata set to "imported"** — Weigh-in records get `received_by = "imported"` and `issued_by = "imported"` (can be edited afterward)
+## Data Validation
+
+The app validates your CSV data thoroughly:
+
+**Hard Errors (prevents import):**
+- Missing required fields
+- Invalid data types (text in number field)
+- Business logic violations (fish_released > fish_count)
+- Duplicate team numbers
+- Invalid dates
+
+**Warnings (allow import with caution):**
+- Teams with no weigh-in data
+- Teams missing Day 2 data
+- Non-active teams
 
 ## FAQ
 
-**Q: Can I import data from an Excel file directly?**
-A: No, but you can export your Excel data as CSV using File → Save As → CSV format, then import it.
+**Q: Can I have team numbers that skip? (1, 3, 5 instead of 1, 2, 3)**
+- Yes, team numbers can be any unique positive number. Skipping is fine.
 
-**Q: Can I import data from other tournament management systems?**
-A: Yes, if they support CSV export. You may need to reorganize columns to match the format.
+**Q: What if I don't have big_fish data?**
+- Leave the big_fish column empty for that row. Calculations will work without it.
 
-**Q: What happens if I import data to an existing tournament name/year?**
-A: The app prevents duplicate tournament entries. Use a different year or name for new imports.
+**Q: Can I edit the CSV after importing?**
+- Yes, you can modify the app data directly in the UI after import.
 
-**Q: Can I edit the CSV after export, then re-import?**
-A: Yes! Export, edit, and re-import with a different tournament name/year.
+**Q: How do I import historical data from last year?**
+- Export last year's tournament from the old system as CSV
+- Upload to the new app via Import
+- The app validates and integrates the data
 
-**Q: Are there file size limits?**
-A: No hard limit, but very large files (10,000+ rows) may take longer to process.
+**Q: Can I import multiple tournaments at once?**
+- No, import one CSV file = one tournament
+- To import multiple, repeat the process for each file
 
-**Q: Can I import historical data from multiple years?**
-A: Yes, one tournament per CSV file. Run separate imports for each year.
+**Q: What if my CSV has extra columns?**
+- Extra columns are ignored
+- Only the required columns are used
 
-## Technical Details
+**Q: Can I import without a Day 2?**
+- Yes, just leave Day 2 weigh-ins out of the CSV
+- Tournament will have only Day 1 standings
 
-- **Format:** RFC 4180 CSV (standard)
-- **Encoding:** UTF-8
-- **Line endings:** LF or CRLF (both supported)
-- **Decimal separator:** Period (`.`) for weights
-- **Date format:** ISO 8601 (YYYY-MM-DD)
-- **Quote character:** Double quote (`"`)
-- **Escape method:** Double quote for quotes in fields (`""`)
+## Data Portability
 
-## Support
+Your data is stored locally in your browser's storage. The CSV export feature ensures you can always:
 
-If you encounter issues:
+1. **Extract your data** at any time without vendor lock-in
+2. **Port to another system** by importing the CSV elsewhere
+3. **Keep backups** of all tournaments in a standard format
 
-1. Check the **Validation Errors** panel for specific problems
-2. Review the **CSV Format** section above
-3. Verify your file follows the exact structure (section headers, column names, data types)
-4. Try with the minimal valid example and build up gradually
+All tournament data (teams, members, weigh-ins) can be exported and re-imported without loss.

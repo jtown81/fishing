@@ -1,43 +1,61 @@
 /**
- * Import service for database operations
- * Handles importing tournament data from parsed CSV into IndexedDB
+ * Import Service
+ * Handles validation and database operations for tournament imports
  */
 
 import { db } from '@db/database'
+import type { ImportedData, ValidationError } from './csv-parser'
+import { validateImportedData } from './csv-parser'
 import type { Tournament, Team, WeighIn } from '@models/tournament'
-import { validateImportedData, type ImportedData } from './csv-parser'
-
-export interface ImportResult {
-  tournamentId: string
-  tournamentName: string
-  teamCount: number
-  weighInCount: number
-}
 
 export interface ImportValidation {
   isValid: boolean
-  errors: string[]
+  errors: ValidationError[]
   warnings: string[]
 }
 
+export interface ImportResult {
+  tournamentId: string
+  teamCount: number
+  weighInCount: number
+  summary: string
+}
+
 /**
- * Validate imported data for consistency and business rules
+ * Validate imported data before import
+ * Checks for errors and warnings
  */
 export async function validateBeforeImport(data: ImportedData): Promise<ImportValidation> {
-  const { errors, warnings } = validateImportedData(data)
+  const errors = validateImportedData(data)
+  const warnings: string[] = []
 
-  // Additional validation: check for tournament conflicts
-  const existingTournament = await db.tournaments
-    .where('name')
-    .equals(data.tournament.name)
-    .filter(t => t.year === data.tournament.year)
-    .first()
-
-  if (existingTournament) {
-    errors.push(
-      `Tournament "${data.tournament.name}" (${data.tournament.year}) already exists. Consider using a different name or year.`
-    )
+  // Additional warnings (non-fatal)
+  if (data.teams.some(t => t.status === 'inactive' || t.status === 'disqualified')) {
+    const nonActiveCount = data.teams.filter(t => t.status !== 'active').length
+    warnings.push(`${nonActiveCount} team(s) with non-active status`)
   }
+
+  // Check for teams missing weigh-in data
+  const weighInTeamDays = new Map<number, Set<number>>()
+  data.weighIns.forEach(w => {
+    if (!weighInTeamDays.has(w.teamNumber)) {
+      weighInTeamDays.set(w.teamNumber, new Set())
+    }
+    weighInTeamDays.get(w.teamNumber)!.add(w.day)
+  })
+
+  data.teams.forEach(team => {
+    if (team.status === 'active') {
+      const days = weighInTeamDays.get(team.teamNumber) || new Set()
+      if (days.size === 0) {
+        warnings.push(`Team ${team.teamNumber} (${team.member1First} ${team.member1Last}) has no weigh-in data`)
+      } else if (days.size === 1) {
+        const day = days.has(1) ? 1 : 2
+        const otherDay = day === 1 ? 2 : 1
+        warnings.push(`Team ${team.teamNumber} missing Day ${otherDay} weigh-in data`)
+      }
+    }
+  })
 
   return {
     isValid: errors.length === 0,
@@ -47,18 +65,33 @@ export async function validateBeforeImport(data: ImportedData): Promise<ImportVa
 }
 
 /**
- * Import tournament data into the database
- * Performs all-or-nothing transaction: if any step fails, rolls back
+ * Import tournament data into IndexedDB
+ * Creates tournament, teams, and weigh-in records
+ * Throws error if tournament already exists (same name+year)
  */
 export async function importTournament(data: ImportedData): Promise<ImportResult> {
-  // Final validation before import
+  // Validate data first
   const validation = await validateBeforeImport(data)
   if (!validation.isValid) {
-    throw new Error(`Import validation failed:\n${validation.errors.join('\n')}`)
+    const errorMessages = validation.errors.map(e => `${e.section} ${e.row ? `(row ${e.row})` : ''}: ${e.message}`).join('\n')
+    throw new Error(`Import validation failed:\n${errorMessages}`)
+  }
+
+  // Check for existing tournament with same name and year
+  const existing = await db.tournaments
+    .where('name')
+    .equals(data.tournament.name)
+    .filter(t => t.year === data.tournament.year)
+    .first()
+
+  if (existing) {
+    throw new Error(
+      `Tournament "${data.tournament.name}" (${data.tournament.year}) already exists. Please use a different name or year.`
+    )
   }
 
   const now = new Date()
-  const tournamentId = `tournament-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+  const tournamentId = `tournament-imported-${data.tournament.year}-${Date.now()}`
 
   // Create tournament record
   const tournament: Tournament = {
@@ -78,68 +111,53 @@ export async function importTournament(data: ImportedData): Promise<ImportResult
     updatedAt: now
   }
 
-  try {
-    // Insert tournament
-    await db.tournaments.add(tournament)
+  await db.tournaments.add(tournament)
 
-    // Create team ID map for weigh-in references
-    const teamMap = new Map<number, string>()
+  // Create team records and associated weigh-ins
+  let weighInCount = 0
 
-    // Insert all teams
-    for (const teamImport of data.teams) {
-      const teamId = `team-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
-      teamMap.set(teamImport.teamNumber, teamId)
+  for (const teamData of data.teams) {
+    const teamId = `team-imported-${tournamentId}-${teamData.teamNumber}`
 
-      const team: Team = {
-        id: teamId,
-        tournamentId,
-        teamNumber: teamImport.teamNumber,
-        members: [
-          {
-            firstName: teamImport.member1First,
-            lastName: teamImport.member1Last
-          },
-          {
-            firstName: teamImport.member2First,
-            lastName: teamImport.member2Last
-          }
-        ],
-        status: teamImport.status,
-        createdAt: now,
-        updatedAt: now
-      }
-
-      await db.teams.add(team)
+    // Create team
+    const team: Team = {
+      id: teamId,
+      tournamentId,
+      teamNumber: teamData.teamNumber,
+      members: [
+        {
+          firstName: teamData.member1First,
+          lastName: teamData.member1Last
+        },
+        {
+          firstName: teamData.member2First,
+          lastName: teamData.member2Last
+        }
+      ],
+      status: teamData.status,
+      createdAt: now,
+      updatedAt: now
     }
 
-    // Insert all weigh-ins
-    let weighInCount = 0
-    for (const weighInImport of data.weighIns) {
-      const teamId = teamMap.get(weighInImport.teamNumber)
-      if (!teamId) {
-        throw new Error(
-          `Weigh-in references unknown team ${weighInImport.teamNumber}`
-        )
-      }
+    await db.teams.add(team)
 
-      // Determine timestamp based on day
-      const timestamp = weighInImport.day === 1
-        ? data.tournament.startDate
-        : data.tournament.endDate
-
+    // Create weigh-in records for this team
+    const teamWeighIns = data.weighIns.filter(w => w.teamNumber === teamData.teamNumber)
+    for (const weighInData of teamWeighIns) {
       const weighIn: WeighIn = {
-        id: `weighin-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        id: `weighin-imported-${tournamentId}-${teamData.teamNumber}-${weighInData.day}`,
         tournamentId,
         teamId,
-        teamNumber: weighInImport.teamNumber,
-        day: weighInImport.day,
-        fishCount: weighInImport.fishCount,
-        rawWeight: weighInImport.rawWeight,
-        fishReleased: weighInImport.fishReleased,
-        bigFishWeight: weighInImport.bigFish,
+        teamNumber: teamData.teamNumber,
+        day: weighInData.day,
+        fishCount: weighInData.fishCount,
+        rawWeight: weighInData.rawWeight,
+        fishReleased: weighInData.fishReleased,
+        bigFishWeight: weighInData.bigFish,
         receivedBy: 'imported',
         issuedBy: 'imported',
-        timestamp,
+        // Use start date for day 1, end date for day 2
+        timestamp: weighInData.day === 1 ? data.tournament.startDate : data.tournament.endDate,
         createdAt: now,
         updatedAt: now
       }
@@ -147,20 +165,25 @@ export async function importTournament(data: ImportedData): Promise<ImportResult
       await db.weighIns.add(weighIn)
       weighInCount++
     }
-
-    return {
-      tournamentId,
-      tournamentName: tournament.name,
-      teamCount: data.teams.length,
-      weighInCount
-    }
-  } catch (error) {
-    // Cleanup on error: delete what we inserted
-    try {
-      await db.tournaments.delete(tournamentId)
-    } catch {
-      // Ignore cleanup errors
-    }
-    throw error
   }
+
+  return {
+    tournamentId,
+    teamCount: data.teams.length,
+    weighInCount,
+    summary: `Imported "${data.tournament.name}" (${data.tournament.year}) with ${data.teams.length} teams and ${weighInCount} weigh-ins`
+  }
+}
+
+/**
+ * Check if a tournament with given name and year already exists
+ */
+export async function tournamentExists(name: string, year: number): Promise<boolean> {
+  const existing = await db.tournaments
+    .where('name')
+    .equals(name)
+    .filter(t => t.year === year)
+    .first()
+
+  return !!existing
 }

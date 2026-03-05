@@ -1,8 +1,14 @@
 /**
- * CSV Parser for tournament import/export
- * Handles parsing, validation, and formatting of tournament data in CSV format
+ * CSV Import/Export Parser
+ * Handles parsing and formatting tournament data in CSV format
+ *
+ * Format: Three-section CSV with headers for #TOURNAMENT, #TEAMS, #WEIGH_INS
+ * See docs/import-export-guide.md for full format specification
  */
 
+/**
+ * Imported data types
+ */
 export interface TournamentImport {
   name: string
   year: number
@@ -36,87 +42,85 @@ export interface ImportedData {
 }
 
 export interface ValidationError {
-  section: string
-  row: number
+  section: 'tournament' | 'teams' | 'weigh-ins' | 'cross-section'
+  row?: number
   message: string
 }
 
 /**
- * Parse CSV content into structured tournament data
+ * Parse CSV content into structured data
+ * Throws error if format is invalid
  */
 export function parseCSV(csvContent: string): ImportedData {
-  const lines = csvContent.split('\n').map(line => line.trim())
-  let currentSection = ''
-  let sectionHeaders: string[] = []
-  const data: ImportedData = {
-    tournament: {
-      name: '',
-      year: 0,
-      location: '',
-      startDate: new Date(),
-      endDate: new Date()
-    },
-    teams: [],
-    weighIns: []
+  const lines = csvContent.split('\n').map(line => line.trim()).filter(line => line.length > 0)
+
+  let currentSection: 'tournament' | 'teams' | 'weigh-ins' | null = null
+  let tournamentHeaders: string[] = []
+  let teamsHeaders: string[] = []
+  let weighInsHeaders: string[] = []
+
+  const tournament: TournamentImport = {
+    name: '',
+    year: 0,
+    location: '',
+    startDate: new Date(),
+    endDate: new Date()
   }
+  const teams: TeamImport[] = []
+  const weighIns: WeighInImport[] = []
 
-  let rowNum = 0
+  for (const line of lines) {
+    // Section markers
+    if (line === '#TOURNAMENT') {
+      currentSection = 'tournament'
+      continue
+    }
+    if (line === '#TEAMS') {
+      currentSection = 'teams'
+      continue
+    }
+    if (line === '#WEIGH_INS') {
+      currentSection = 'weigh-ins'
+      continue
+    }
 
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i]
-
-    // Skip blank lines and comments
-    if (!line || line.startsWith('#')) {
-      if (line === '#TOURNAMENT') {
-        currentSection = 'tournament'
-        sectionHeaders = []
-      } else if (line === '#TEAMS') {
-        currentSection = 'teams'
-        sectionHeaders = []
-      } else if (line === '#WEIGH_INS') {
-        currentSection = 'weigh-ins'
-        sectionHeaders = []
+    // Parse headers and data based on current section
+    if (currentSection === 'tournament') {
+      if (tournamentHeaders.length === 0) {
+        tournamentHeaders = parseCSVLine(line)
+      } else {
+        const values = parseCSVLine(line)
+        parseTournamentRow(values, tournamentHeaders, tournament)
       }
-      continue
-    }
-
-    // Parse headers
-    if (sectionHeaders.length === 0 && currentSection) {
-      sectionHeaders = parseCSVLine(line)
-      continue
-    }
-
-    // Parse data rows
-    if (currentSection && sectionHeaders.length > 0) {
-      rowNum++
-      const values = parseCSVLine(line)
-      const row = createRowObject(sectionHeaders, values)
-
-      try {
-        if (currentSection === 'tournament') {
-          data.tournament = parseTournamentRow(row)
-        } else if (currentSection === 'teams') {
-          data.teams.push(parseTeamRow(row))
-        } else if (currentSection === 'weigh-ins') {
-          data.weighIns.push(parseWeighInRow(row))
-        }
-      } catch (err) {
-        throw new Error(
-          `${currentSection} row ${rowNum}: ${err instanceof Error ? err.message : 'Unknown error'}`
-        )
+    } else if (currentSection === 'teams') {
+      if (teamsHeaders.length === 0) {
+        teamsHeaders = parseCSVLine(line)
+      } else {
+        const values = parseCSVLine(line)
+        const team = parseTeamRow(values, teamsHeaders)
+        if (team) teams.push(team)
+      }
+    } else if (currentSection === 'weigh-ins') {
+      if (weighInsHeaders.length === 0) {
+        weighInsHeaders = parseCSVLine(line)
+      } else {
+        const values = parseCSVLine(line)
+        const weighIn = parseWeighInRow(values, weighInsHeaders)
+        if (weighIn) weighIns.push(weighIn)
       }
     }
   }
 
-  return data
+  return { tournament, teams, weighIns }
 }
 
 /**
- * Parse a single CSV line handling quoted fields
+ * Parse a CSV line using RFC 4180 rules
+ * Handles quoted fields with escaped quotes
  */
-function parseCSVLine(line: string): string[] {
-  const result: string[] = []
-  let current = ''
+export function parseCSVLine(line: string): string[] {
+  const fields: string[] = []
+  let currentField = ''
   let inQuotes = false
 
   for (let i = 0; i < line.length; i++) {
@@ -126,143 +130,103 @@ function parseCSVLine(line: string): string[] {
     if (char === '"') {
       if (inQuotes && nextChar === '"') {
         // Escaped quote
-        current += '"'
-        i++
+        currentField += '"'
+        i++ // Skip next quote
       } else {
         // Toggle quote state
         inQuotes = !inQuotes
       }
     } else if (char === ',' && !inQuotes) {
       // Field separator
-      result.push(current.trim())
-      current = ''
+      fields.push(currentField.trim())
+      currentField = ''
     } else {
-      current += char
+      currentField += char
     }
   }
 
-  result.push(current.trim())
-  return result
-}
+  // Add final field
+  fields.push(currentField.trim())
 
-/**
- * Create an object from headers and values
- */
-function createRowObject(headers: string[], values: string[]): Record<string, string> {
-  const obj: Record<string, string> = {}
-  for (let i = 0; i < headers.length; i++) {
-    obj[headers[i]] = values[i] || ''
-  }
-  return obj
+  return fields
 }
 
 /**
  * Parse tournament row
  */
-function parseTournamentRow(row: Record<string, string>): TournamentImport {
-  const { name, year, location, start_date, end_date } = row
+function parseTournamentRow(
+  values: string[],
+  headers: string[],
+  tournament: TournamentImport
+): void {
+  const row: Record<string, string> = {}
+  headers.forEach((header, idx) => {
+    row[header.toLowerCase()] = values[idx] || ''
+  })
 
-  if (!name) throw new Error('name is required')
-  if (!year) throw new Error('year is required')
-  if (!location) throw new Error('location is required')
-  if (!start_date) throw new Error('start_date is required')
-  if (!end_date) throw new Error('end_date is required')
-
-  const parsedYear = parseInt(year, 10)
-  if (isNaN(parsedYear)) throw new Error('year must be a number')
-
-  const startDate = parseDate(start_date)
-  if (!startDate) throw new Error('start_date must be in YYYY-MM-DD format')
-
-  const endDate = parseDate(end_date)
-  if (!endDate) throw new Error('end_date must be in YYYY-MM-DD format')
-
-  return {
-    name,
-    year: parsedYear,
-    location,
-    startDate,
-    endDate
-  }
+  tournament.name = row['name'] || ''
+  tournament.year = parseInt(row['year'], 10) || 0
+  tournament.location = row['location'] || ''
+  tournament.startDate = parseDate(row['start_date']) || new Date()
+  tournament.endDate = parseDate(row['end_date']) || new Date()
 }
 
 /**
  * Parse team row
  */
-function parseTeamRow(row: Record<string, string>): TeamImport {
-  const { team_number, member1_first, member1_last, member2_first, member2_last, status } = row
+function parseTeamRow(values: string[], headers: string[]): TeamImport | null {
+  const row: Record<string, string> = {}
+  headers.forEach((header, idx) => {
+    row[header.toLowerCase()] = values[idx] || ''
+  })
 
-  if (!team_number) throw new Error('team_number is required')
-  if (!member1_first) throw new Error('member1_first is required')
-  if (!member1_last) throw new Error('member1_last is required')
-  if (!member2_first) throw new Error('member2_first is required')
-  if (!member2_last) throw new Error('member2_last is required')
-  if (!status) throw new Error('status is required')
+  const teamNumber = parseInt(row['team_number'], 10) || 0
+  const status = (row['status'] || 'active').toLowerCase() as 'active' | 'inactive' | 'disqualified'
 
-  const teamNum = parseInt(team_number, 10)
-  if (isNaN(teamNum) || teamNum <= 0) throw new Error('team_number must be a positive integer')
-
-  const validStatus = status.toLowerCase() as 'active' | 'inactive' | 'disqualified'
-  if (!['active', 'inactive', 'disqualified'].includes(validStatus)) {
-    throw new Error('status must be: active, inactive, or disqualified')
+  // Skip if empty row
+  if (teamNumber === 0 && !row['member1_first']) {
+    return null
   }
 
   return {
-    teamNumber: teamNum,
-    member1First: member1_first,
-    member1Last: member1_last,
-    member2First: member2_first,
-    member2Last: member2_last,
-    status: validStatus
+    teamNumber,
+    member1First: row['member1_first'] || '',
+    member1Last: row['member1_last'] || '',
+    member2First: row['member2_first'] || '',
+    member2Last: row['member2_last'] || '',
+    status: ['active', 'inactive', 'disqualified'].includes(status) ? status : 'active'
   }
 }
 
 /**
  * Parse weigh-in row
  */
-function parseWeighInRow(row: Record<string, string>): WeighInImport {
-  const { team_number, day, fish_count, raw_weight, fish_released, big_fish } = row
+function parseWeighInRow(values: string[], headers: string[]): WeighInImport | null {
+  const row: Record<string, string> = {}
+  headers.forEach((header, idx) => {
+    row[header.toLowerCase()] = values[idx] || ''
+  })
 
-  if (!team_number) throw new Error('team_number is required')
-  if (!day) throw new Error('day is required')
-  if (fish_count === undefined) throw new Error('fish_count is required')
-  if (raw_weight === undefined) throw new Error('raw_weight is required')
-  if (fish_released === undefined) throw new Error('fish_released is required')
+  const teamNumber = parseInt(row['team_number'], 10) || 0
+  const dayRaw = parseInt(row['day'], 10) || 0
+  const day = (dayRaw === 1 || dayRaw === 2 ? dayRaw : 0) as 1 | 2
+  const fishCount = parseInt(row['fish_count'], 10) || 0
+  const rawWeight = parseFloat(row['raw_weight']) || 0
+  const fishReleased = parseInt(row['fish_released'], 10) || 0
+  const bigFish = row['big_fish'] ? parseFloat(row['big_fish']) : undefined
 
-  const teamNum = parseInt(team_number, 10)
-  if (isNaN(teamNum) || teamNum <= 0) throw new Error('team_number must be a positive integer')
-
-  const dayNum = parseInt(day, 10)
-  if (dayNum !== 1 && dayNum !== 2) throw new Error('day must be 1 or 2')
-
-  const fishCountNum = parseInt(fish_count, 10)
-  if (isNaN(fishCountNum) || fishCountNum < 0) throw new Error('fish_count must be a non-negative integer')
-
-  const rawWeightNum = parseFloat(raw_weight)
-  if (isNaN(rawWeightNum) || rawWeightNum < 0) throw new Error('raw_weight must be a non-negative number')
-
-  const fishReleasedNum = parseInt(fish_released, 10)
-  if (isNaN(fishReleasedNum) || fishReleasedNum < 0) throw new Error('fish_released must be a non-negative integer')
-
-  if (fishReleasedNum > fishCountNum) {
-    throw new Error('fish_released cannot exceed fish_count')
-  }
-
-  // Parse optional big_fish
-  let bigFishNum: number | undefined
-  if (big_fish && big_fish.trim() !== '') {
-    bigFishNum = parseFloat(big_fish)
-    if (isNaN(bigFishNum) || bigFishNum < 0) throw new Error('big_fish must be a non-negative number')
-    if (bigFishNum > rawWeightNum) throw new Error('big_fish cannot exceed raw_weight')
+  // Skip if empty row (both teamNumber and day are missing/invalid)
+  if (teamNumber === 0) {
+    return null
   }
 
   return {
-    teamNumber: teamNum,
-    day: dayNum as 1 | 2,
-    fishCount: fishCountNum,
-    rawWeight: parseFloat(rawWeightNum.toFixed(2)),
-    fishReleased: fishReleasedNum,
-    bigFish: bigFishNum ? parseFloat(bigFishNum.toFixed(2)) : undefined
+    teamNumber,
+    day,
+    fishCount,
+    rawWeight,
+    fishReleased,
+    bigFish: bigFish && bigFish > 0 ? bigFish : undefined
   }
 }
 
@@ -270,100 +234,191 @@ function parseWeighInRow(row: Record<string, string>): WeighInImport {
  * Parse ISO date string (YYYY-MM-DD)
  */
 function parseDate(dateStr: string): Date | null {
+  if (!dateStr) return null
   const match = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})$/)
   if (!match) return null
-
   const [, year, month, day] = match
-  const date = new Date(`${year}-${month}-${day}T00:00:00Z`)
-
-  // Verify the date is valid
-  if (isNaN(date.getTime())) return null
-  return date
+  return new Date(parseInt(year), parseInt(month) - 1, parseInt(day))
 }
 
 /**
- * Validate imported data and return errors/warnings
+ * Validate imported data
+ * Returns all errors found (empty array if valid)
  */
-export function validateImportedData(data: ImportedData): {
-  isValid: boolean
-  errors: string[]
-  warnings: string[]
-} {
-  const errors: string[] = []
-  const warnings: string[] = []
+export function validateImportedData(data: ImportedData): ValidationError[] {
+  const errors: ValidationError[] = []
 
-  // Tournament validation
-  if (!data.tournament.name) errors.push('Tournament name is required')
-  if (!data.tournament.year) errors.push('Tournament year is required')
-  if (!data.tournament.location) errors.push('Tournament location is required')
-  if (!data.tournament.startDate) errors.push('Tournament start_date is required')
-  if (!data.tournament.endDate) errors.push('Tournament end_date is required')
-
-  if (data.tournament.startDate > data.tournament.endDate) {
-    errors.push('Tournament start_date must be before end_date')
+  // Validate tournament
+  if (!data.tournament.name || data.tournament.name.trim().length === 0) {
+    errors.push({
+      section: 'tournament',
+      message: 'Tournament name is required'
+    })
   }
 
-  // Teams validation
+  if (data.tournament.year < 1900 || data.tournament.year > 2100) {
+    errors.push({
+      section: 'tournament',
+      message: `Tournament year must be between 1900 and 2100 (got ${data.tournament.year})`
+    })
+  }
+
+  if (!data.tournament.location || data.tournament.location.trim().length === 0) {
+    errors.push({
+      section: 'tournament',
+      message: 'Tournament location is required'
+    })
+  }
+
+  if (data.tournament.startDate > data.tournament.endDate) {
+    errors.push({
+      section: 'tournament',
+      message: 'Start date must be before end date'
+    })
+  }
+
+  // Validate teams
   if (data.teams.length === 0) {
-    errors.push('At least one team is required')
+    errors.push({
+      section: 'teams',
+      message: 'At least one team is required'
+    })
   }
 
   const teamNumbers = new Set<number>()
-  for (const team of data.teams) {
+  data.teams.forEach((team, idx) => {
+    const row = idx + 2 // +1 for header, +1 for 1-indexed
+
+    if (team.teamNumber <= 0) {
+      errors.push({
+        section: 'teams',
+        row,
+        message: `Team number must be positive (got ${team.teamNumber})`
+      })
+    }
+
     if (teamNumbers.has(team.teamNumber)) {
-      errors.push(`Duplicate team_number: ${team.teamNumber}`)
+      errors.push({
+        section: 'teams',
+        row,
+        message: `Duplicate team number: ${team.teamNumber}`
+      })
     }
     teamNumbers.add(team.teamNumber)
-  }
 
-  // Weigh-ins validation
-  const weighInsByTeamDay = new Map<string, boolean>()
-
-  for (const weighIn of data.weighIns) {
-    // Check team exists
-    if (!teamNumbers.has(weighIn.teamNumber)) {
-      errors.push(`Weigh-in references non-existent team_number: ${weighIn.teamNumber}`)
+    if (!team.member1First || !team.member1Last) {
+      errors.push({
+        section: 'teams',
+        row,
+        message: `Team ${team.teamNumber}: Member 1 first and last name required`
+      })
     }
 
-    // Check duplicate entries
+    if (!team.member2First || !team.member2Last) {
+      errors.push({
+        section: 'teams',
+        row,
+        message: `Team ${team.teamNumber}: Member 2 first and last name required`
+      })
+    }
+
+    const validStatuses = ['active', 'inactive', 'disqualified']
+    if (!validStatuses.includes(team.status)) {
+      errors.push({
+        section: 'teams',
+        row,
+        message: `Team ${team.teamNumber}: Invalid status '${team.status}' (must be: active, inactive, or disqualified)`
+      })
+    }
+  })
+
+  // Validate weigh-ins
+  const weighInsByTeamDay = new Map<string, WeighInImport>()
+  data.weighIns.forEach((weighIn, idx) => {
+    const row = idx + 2 // Account for header
+
+    if (weighIn.day !== 1 && weighIn.day !== 2) {
+      errors.push({
+        section: 'weigh-ins',
+        row,
+        message: `Team ${weighIn.teamNumber}: Day must be 1 or 2 (got ${weighIn.day})`
+      })
+    }
+
+    if (weighIn.fishCount < 0) {
+      errors.push({
+        section: 'weigh-ins',
+        row,
+        message: `Team ${weighIn.teamNumber} Day ${weighIn.day}: fish_count cannot be negative`
+      })
+    }
+
+    if (weighIn.rawWeight < 0) {
+      errors.push({
+        section: 'weigh-ins',
+        row,
+        message: `Team ${weighIn.teamNumber} Day ${weighIn.day}: raw_weight cannot be negative`
+      })
+    }
+
+    if (weighIn.fishReleased < 0) {
+      errors.push({
+        section: 'weigh-ins',
+        row,
+        message: `Team ${weighIn.teamNumber} Day ${weighIn.day}: fish_released cannot be negative`
+      })
+    }
+
+    if (weighIn.fishReleased > weighIn.fishCount) {
+      errors.push({
+        section: 'weigh-ins',
+        row,
+        message: `Team ${weighIn.teamNumber} Day ${weighIn.day}: fish_released (${weighIn.fishReleased}) cannot exceed fish_count (${weighIn.fishCount})`
+      })
+    }
+
+    if (weighIn.bigFish !== undefined && weighIn.bigFish > weighIn.rawWeight) {
+      errors.push({
+        section: 'weigh-ins',
+        row,
+        message: `Team ${weighIn.teamNumber} Day ${weighIn.day}: big_fish (${weighIn.bigFish}) cannot exceed raw_weight (${weighIn.rawWeight})`
+      })
+    }
+
+    // Check for duplicate team+day
     const key = `${weighIn.teamNumber}-${weighIn.day}`
     if (weighInsByTeamDay.has(key)) {
-      errors.push(`Duplicate weigh-in for team ${weighIn.teamNumber} on day ${weighIn.day}`)
+      errors.push({
+        section: 'weigh-ins',
+        row,
+        message: `Team ${weighIn.teamNumber}: Duplicate entry for day ${weighIn.day}`
+      })
     }
-    weighInsByTeamDay.set(key, true)
-  }
+    weighInsByTeamDay.set(key, weighIn)
+  })
 
-  // Warning: teams without weigh-ins
-  for (const team of data.teams) {
-    const hasWeighIn = data.weighIns.some(w => w.teamNumber === team.teamNumber)
-    if (!hasWeighIn && team.status === 'active') {
-      warnings.push(`Team ${team.teamNumber} (${team.member1First} ${team.member1Last}) has no weigh-in data`)
+  // Cross-section validation: weigh-in teams must exist in teams list
+  data.weighIns.forEach((weighIn, idx) => {
+    if (!teamNumbers.has(weighIn.teamNumber)) {
+      const row = idx + 2
+      errors.push({
+        section: 'cross-section',
+        row,
+        message: `Weigh-in for team ${weighIn.teamNumber} but team not found in teams list`
+      })
     }
-  }
+  })
 
-  return {
-    isValid: errors.length === 0,
-    errors,
-    warnings
-  }
+  return errors
 }
 
 /**
  * Format tournament data as CSV for export
+ * Returns CSV string ready for file download
  */
 export function formatForExport(
-  tournament: {
-    name: string
-    year: number
-    location: string
-    startDate: Date
-    endDate: Date
-  },
-  teams: Array<{
-    teamNumber: number
-    members: Array<{ firstName: string; lastName: string }>
-    status: 'active' | 'inactive' | 'disqualified'
-  }>,
+  tournament: { name: string; year: number; location: string; startDate: Date; endDate: Date },
+  teams: Array<{ teamNumber: number; members: Array<{ firstName: string; lastName: string }>; status: string }>,
   weighIns: Array<{
     teamNumber: number
     day: 1 | 2
@@ -379,67 +434,77 @@ export function formatForExport(
   lines.push('#TOURNAMENT')
   lines.push('name,year,location,start_date,end_date')
   lines.push(
-    [
-      escapeCSV(tournament.name),
-      tournament.year,
-      escapeCSV(tournament.location),
+    formatCSVLine([
+      tournament.name,
+      tournament.year.toString(),
+      tournament.location,
       formatDateISO(tournament.startDate),
       formatDateISO(tournament.endDate)
-    ].join(',')
+    ])
   )
-  lines.push('')
 
   // Teams section
+  lines.push('')
   lines.push('#TEAMS')
   lines.push('team_number,member1_first,member1_last,member2_first,member2_last,status')
-  for (const team of teams) {
-    const m1 = team.members[0]
-    const m2 = team.members[1]
+  teams.forEach(team => {
+    const member1 = team.members[0] || { firstName: '', lastName: '' }
+    const member2 = team.members[1] || { firstName: '', lastName: '' }
     lines.push(
-      [
-        team.teamNumber,
-        escapeCSV(m1.firstName),
-        escapeCSV(m1.lastName),
-        escapeCSV(m2.firstName),
-        escapeCSV(m2.lastName),
+      formatCSVLine([
+        team.teamNumber.toString(),
+        member1.firstName,
+        member1.lastName,
+        member2.firstName,
+        member2.lastName,
         team.status
-      ].join(',')
+      ])
     )
-  }
-  lines.push('')
+  })
 
   // Weigh-ins section
+  lines.push('')
   lines.push('#WEIGH_INS')
   lines.push('team_number,day,fish_count,raw_weight,fish_released,big_fish')
-  for (const weighIn of weighIns) {
+  weighIns.forEach(weighIn => {
     lines.push(
-      [
-        weighIn.teamNumber,
-        weighIn.day,
-        weighIn.fishCount,
+      formatCSVLine([
+        weighIn.teamNumber.toString(),
+        weighIn.day.toString(),
+        weighIn.fishCount.toString(),
         weighIn.rawWeight.toFixed(2),
-        weighIn.fishReleased,
-        weighIn.bigFishWeight?.toFixed(2) || ''
-      ].join(',')
+        weighIn.fishReleased.toString(),
+        weighIn.bigFishWeight ? weighIn.bigFishWeight.toFixed(2) : ''
+      ])
     )
-  }
+  })
 
   return lines.join('\n')
 }
 
 /**
- * Escape CSV field (quote if contains comma, newline, or quote)
+ * Format values as CSV line, handling quoting and escaping
  */
-function escapeCSV(value: string): string {
-  if (value.includes(',') || value.includes('\n') || value.includes('"')) {
-    return `"${value.replace(/"/g, '""')}"`
-  }
-  return value
+function formatCSVLine(fields: string[]): string {
+  return fields
+    .map(field => {
+      // Quote field if it contains comma, quote, or newline
+      if (field.includes(',') || field.includes('"') || field.includes('\n')) {
+        // Escape quotes by doubling them
+        const escaped = field.replace(/"/g, '""')
+        return `"${escaped}"`
+      }
+      return field
+    })
+    .join(',')
 }
 
 /**
- * Format Date as ISO string (YYYY-MM-DD)
+ * Format date as ISO string (YYYY-MM-DD)
  */
 function formatDateISO(date: Date): string {
-  return date.toISOString().split('T')[0]
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
 }

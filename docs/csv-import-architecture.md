@@ -2,457 +2,468 @@
 
 ## Overview
 
-The CSV import/export system is designed with clean separation of concerns:
+The import/export system is built on a **pure function** architecture that separates concerns into discrete modules:
 
-- **csv-parser.ts**: Pure functions for parsing and formatting CSV
-- **import-service.ts**: Database operations for importing
-- **export-service.ts**: Preparing data for export
-- **ImportExportManager.tsx**: User interface component
+- **Parser** (`csv-parser.ts`): Tokenization and parsing of CSV format
+- **Service** (`import-service.ts`): Business logic and database operations
+- **Exporter** (`export-service.ts`): Formatting data back to CSV
+- **UI** (`ImportExportManager.tsx` + tabs): React components for user interaction
 
-This document describes the architecture and implementation details for developers.
+## Design Principles
 
-## Module: `/src/modules/import-export/`
+### 1. Pure Functions for Business Logic
 
-### File Structure
+The CSV parser and validator are **pure functions** with no side effects:
+
+```typescript
+// parseCSV: string → ImportedData
+// No I/O, no database access, no mutations
+
+// validateImportedData: ImportedData → ValidationError[]
+// Pure validation function, returns all errors in single pass
+```
+
+**Benefits:**
+- Testable without mocks or fixtures
+- Composable and reusable
+- Works in Node.js, browser, or worker thread
+
+### 2. Separation of Concerns
+
+| Module | Responsibility |
+|--------|-----------------|
+| `csv-parser.ts` | Tokenization, parsing, type coercion |
+| `import-service.ts` | Validation rules, database operations |
+| `export-service.ts` | Data retrieval and formatting |
+| `ImportExportManager.tsx` | User workflow and state management |
+
+**No business logic in UI components** — all logic in modules, tested independently.
+
+### 3. Single-Pass Validation
+
+All validation errors are collected in a single pass through the data:
+
+```typescript
+const errors = validateImportedData(data)
+// Returns ALL errors, not just the first one
+// Allows users to fix multiple issues before re-uploading
+```
+
+## File Structure
 
 ```
 src/modules/import-export/
-├── csv-parser.ts          # Pure functions: parse, validate, format
-├── import-service.ts      # Database operations: import, validate
-├── export-service.ts      # Data preparation: export, filename generation
-└── index.ts               # Barrel export
+├── csv-parser.ts          (500+ LOC) - Parsing & validation logic
+├── import-service.ts      (200+ LOC) - DB operations & import workflow
+├── export-service.ts      (100+ LOC) - Export & download
+└── index.ts               (50 LOC)  - Barrel exports
+
+src/components/import-export/
+├── ImportExportManager.tsx (100 LOC) - Main tab container
+├── ImportTab.tsx          (200 LOC) - Upload & import workflow UI
+├── ExportTab.tsx          (150 LOC) - Export & download UI
+└── index.ts               (20 LOC)  - Barrel exports
+
+tests/unit/
+└── csv-import.test.ts     (400+ LOC) - 25+ test cases
 ```
 
-### Design Principles
+## Data Flow
 
-1. **Pure Functions First**: Core parsing logic has zero dependencies on React, Zustand, or database
-2. **Validation as a Separate Step**: Parsing and validation are distinct operations
-3. **Type Safety**: Full TypeScript with strict mode; all data structures are typed
-4. **Explicit Errors**: Clear, actionable error messages for users
+### Import Flow
+
+```
+User selects file
+    ↓
+parseCSV(csvContent)
+    ↓
+ImportedData {tournament, teams, weighIns}
+    ↓
+validateBeforeImport(data)
+    ↓
+ValidationResult {isValid, errors[], warnings[]}
+    ↓
+[If valid] Show preview
+    ↓
+[User confirms] importTournament(data)
+    ↓
+[Database] INSERT tournament, teams, weigh-ins
+    ↓
+Success message with summary
+```
+
+### Export Flow
+
+```
+User selects tournament
+    ↓
+prepareTournamentExport(tournamentId)
+    ↓
+[Database] SELECT tournament, teams, weigh-ins
+    ↓
+formatForExport(tournament, teams, weighIns)
+    ↓
+CSV string
+    ↓
+downloadCSV(filename, csvContent)
+    ↓
+Browser downloads file
+```
 
 ## CSV Parser (`csv-parser.ts`)
 
-### Public Functions
+### Parsing Pipeline
 
-#### `parseCSV(csvContent: string): ImportedData`
-
-Parses raw CSV string into structured tournament data.
-
-**Input:** Raw CSV string (supports both LF and CRLF line endings)
-
-**Output:** `ImportedData` object with tournament, teams, and weigh-ins
-
-**Throws:** Error if parsing fails (invalid format, missing sections, type mismatches)
-
-**Algorithm:**
-1. Split content by newlines
-2. Identify sections by `#SECTION` headers
-3. Extract headers from first row of each section
-4. Parse data rows using RFC 4180 CSV rules
-5. Convert and validate data types
-6. Return structured data or throw descriptive error
-
-**Example:**
-```typescript
-const csv = `#TOURNAMENT
-name,year,location,start_date,end_date
-Test,2024,Lake,2024-01-01,2024-01-02
-
-#TEAMS
-team_number,member1_first,member1_last,member2_first,member2_last,status
-1,John,Doe,Jane,Smith,active
-
-#WEIGH_INS
-team_number,day,fish_count,raw_weight,fish_released,big_fish`
-
-const data = parseCSV(csv)
-// data.tournament.name === 'Test'
-// data.teams.length === 1
+```
+Raw CSV String
+    ↓
+parseCSVLine() × N     [RFC 4180 compliant]
+    ↓
+Structure (tournament, teams, weigh-ins)
+    ↓
+Type Coercion (string → number/Date)
+    ↓
+ImportedData {typed values}
 ```
 
-#### `validateImportedData(data: ImportedData): { isValid, errors[], warnings[] }`
+### Key Functions
 
-Validates parsed data against business rules.
+**`parseCSV(csvContent: string): ImportedData`**
+- Entry point for parsing
+- Returns fully structured data with type coercion
+- Does NOT validate — just parses
 
-**Input:** `ImportedData` object from `parseCSV()`
+**`parseCSVLine(line: string): string[]`**
+- RFC 4180 CSV parsing
+- Handles quoted fields with escaped quotes
+- Trims whitespace from values
+- Example: `"Smith, John",2024` → `['Smith, John', '2024']`
 
-**Output:** `{ isValid: boolean, errors: string[], warnings: string[] }`
+**`validateImportedData(data: ImportedData): ValidationError[]`**
+- Single-pass validation
+- Checks tournament, teams, weigh-ins, and cross-references
+- Returns ALL errors found
 
-**Validations Performed:**
-- Tournament: required fields, date range
-- Teams: at least 1 team, unique team numbers
-- Weigh-ins: team references exist, no duplicates
-- Cross-section: weigh-ins reference valid teams
-
-**Errors (fail import):**
-- Missing required fields
-- Invalid date ranges
-- Duplicate team numbers
-- Weigh-in references non-existent team
-
-**Warnings (allow import):**
-- Active team with no weigh-in data
-- Missing Day 2 weigh-in (partial data)
-
-**Example:**
-```typescript
-const data = parseCSV(csvContent)
-const validation = validateImportedData(data)
-
-if (!validation.isValid) {
-  console.error(validation.errors) // ["Duplicate team_number: 5"]
-}
-if (validation.warnings.length > 0) {
-  console.warn(validation.warnings) // ["Team 3 has no weigh-in data"]
-}
-```
-
-#### `formatForExport(tournament, teams, weighIns): string`
-
-Formats tournament data as CSV string.
-
-**Input:**
-- `tournament`: Tournament metadata (name, year, location, dates)
-- `teams`: Array of teams with members and status
-- `weighIns`: Array of weigh-in records
-
-**Output:** CSV string ready for download
-
-**Features:**
-- Escapes special characters (commas, quotes, newlines)
-- Formats decimals to 2 places
-- Sorts sections in standard order
-- Includes blank lines for readability
-
-**Example:**
-```typescript
-const csv = formatForExport(
-  { name: 'Test', year: 2024, location: 'Lake', ... },
-  [{ teamNumber: 1, members: [...], status: 'active' }],
-  [{ teamNumber: 1, day: 1, fishCount: 5, ... }]
-)
-// csv contains "#TOURNAMENT\n#TEAMS\n#WEIGH_INS\n..."
-```
-
-### Type Definitions
+### Type Coercion Rules
 
 ```typescript
-interface TournamentImport {
-  name: string
-  year: number
-  location: string
-  startDate: Date
-  endDate: Date
-}
+// Tournament
+year: "2024" → 2024 (parseInt base 10)
+startDate: "2024-01-01" → new Date(2024, 0, 1)
 
-interface TeamImport {
-  teamNumber: number
-  member1First: string
-  member1Last: string
-  member2First: string
-  member2Last: string
-  status: 'active' | 'inactive' | 'disqualified'
-}
+// Teams
+teamNumber: "5" → 5 (parseInt)
+status: "Active" → "active" (toLowerCase, then validate)
 
-interface WeighInImport {
-  teamNumber: number
-  day: 1 | 2
-  fishCount: number
-  rawWeight: number
-  fishReleased: number
-  bigFish?: number  // Optional
-}
-
-interface ImportedData {
-  tournament: TournamentImport
-  teams: TeamImport[]
-  weighIns: WeighInImport[]
-}
+// Weigh-ins
+fishCount: "5" → 5 (parseInt)
+rawWeight: "15.20" → 15.20 (parseFloat)
+bigFish: "" → undefined (optional field)
 ```
 
-### CSV Parsing Rules
+### Validation Rules
 
-**Section Detection:**
-- Lines starting with `#TOURNAMENT`, `#TEAMS`, `#WEIGH_INS` trigger section change
-- First non-comment/non-blank line after section is the header row
-- Headers must match exactly (case-sensitive)
+**Business Logic Validation:**
+```typescript
+fishReleased ≤ fishCount       // Can't release more than caught
+bigFish ≤ rawWeight            // Largest fish ≤ total weight
+startDate ≤ endDate            // Tournament start before end
+day ∈ [1, 2]                   // Only 2-day tournaments
+```
 
-**Field Parsing:**
-- RFC 4180 compliant CSV
-- Quoted fields allow commas and newlines
-- Escaped quotes inside quoted fields: `""` → `"`
-- Whitespace trimmed from all fields
-
-**Type Conversion:**
-- Numbers: `parseInt()`, `parseFloat()`
-- Dates: ISO 8601 format `YYYY-MM-DD`
-- Enums: lowercase normalization for status
-
-**Precision:**
-- `rawWeight` and `bigFish` rounded to 2 decimal places
-- ISO dates in UTC
+**Data Integrity Validation:**
+```typescript
+teamNumbers unique within tournament
+weigh-in.teamNumber ∈ tournament.teams
+status ∈ ['active', 'inactive', 'disqualified']
+year ∈ [1900, 2100]
+```
 
 ## Import Service (`import-service.ts`)
 
-### Public Functions
+### Database Operations
 
-#### `validateBeforeImport(data: ImportedData): ImportValidation`
-
-Final validation before database operations.
-
-**Input:** Parsed `ImportedData`
-
-**Output:** `{ isValid: boolean, errors: string[], warnings: string[] }`
-
-**Additional Checks:**
-- CSV validation via `validateImportedData()`
-- Tournament uniqueness: no existing tournament with same name+year
-- Database connectivity (implicit in `db.tournaments.where()`)
-
-**Example:**
-```typescript
-const validation = await validateBeforeImport(parsedData)
-if (!validation.isValid) {
-  throw new Error(validation.errors.join('\n'))
-}
-```
-
-#### `importTournament(data: ImportedData): Promise<ImportResult>`
-
-Imports tournament data into IndexedDB.
-
-**Input:** Validated `ImportedData`
-
-**Output:** `{ tournamentId, tournamentName, teamCount, weighInCount }`
-
-**Process:**
-1. Final validation via `validateBeforeImport()`
-2. Generate IDs (tournament, teams, weigh-ins)
-3. Create tournament record
-4. Bulk insert teams with generated IDs
-5. Build team ID map (teamNumber → teamId)
-6. Bulk insert weigh-ins with team ID references
-7. Return summary
-
-**Timestamps:**
-- Weigh-in Day 1: `timestamp = tournament.startDate`
-- Weigh-in Day 2: `timestamp = tournament.endDate`
-- `receivedBy` and `issuedBy` set to `"imported"`
-
-**Error Handling:**
-- If any step fails, rollback (delete inserted tournament)
-- Throw descriptive error with original issue
-- Database errors propagate to caller
-
-**Example:**
-```typescript
-try {
-  const result = await importTournament(parsedData)
-  console.log(`Imported ${result.teamCount} teams`)
-  // Reload tournament list from store
-  await loadTournaments()
-} catch (err) {
-  console.error(`Import failed: ${err.message}`)
-}
-```
-
-### Type Definitions
+**`importTournament(data: ImportedData): Promise<ImportResult>`**
 
 ```typescript
 interface ImportResult {
   tournamentId: string
-  tournamentName: string
   teamCount: number
   weighInCount: number
-}
-
-interface ImportValidation {
-  isValid: boolean
-  errors: string[]
-  warnings: string[]
+  summary: string
 }
 ```
+
+**Steps:**
+1. Call `validateBeforeImport()` (validation + warnings)
+2. Check for existing tournament with same name + year
+3. Generate unique IDs: `tournament-imported-{year}-{timestamp}`
+4. INSERT tournament record
+5. For each team:
+   - INSERT team record
+   - INSERT associated weigh-in records
+6. Return summary with counts
+
+**Metadata:**
+- All created records: `createdAt = now`, `updatedAt = now`
+- Weigh-in records: `receivedBy = "imported"`, `issuedBy = "imported"`
+- Weigh-in timestamp: start_date for day 1, end_date for day 2
+
+### Validation Integration
+
+**`validateBeforeImport(data: ImportedData): Promise<ImportValidation>`**
+
+```typescript
+interface ImportValidation {
+  isValid: boolean           // No errors
+  errors: ValidationError[]  // Hard errors (prevent import)
+  warnings: string[]        // Warnings (allow import)
+}
+```
+
+**Errors** (prevent import):
+- Invalid tournament data (name, year, dates)
+- Duplicate team numbers
+- Validation errors from `validateImportedData()`
+
+**Warnings** (allow import):
+- Teams with no weigh-in data
+- Teams missing Day 2 data
+- Non-active teams
+
+### Duplicate Prevention
+
+Before importing, check if tournament already exists:
+
+```typescript
+const existing = await db.tournaments
+  .where('name').equals(data.tournament.name)
+  .filter(t => t.year === data.tournament.year)
+  .first()
+
+if (existing) throw Error("Tournament already exists")
+```
+
+**Rationale:** Prevent accidental duplicates while allowing same tournament name in different years.
 
 ## Export Service (`export-service.ts`)
 
-### Public Functions
+### Data Retrieval & Formatting
 
-#### `prepareTournamentExport(tournamentId: string): Promise<string>`
+**`prepareTournamentExport(tournamentId: string): Promise<ExportResult>`**
 
-Fetches tournament from database and formats as CSV.
+```typescript
+interface ExportResult {
+  filename: string  // tournament-2024-my-event.csv
+  csvContent: string
+}
+```
 
-**Input:** Tournament ID
-
-**Output:** CSV string ready for download
-
-**Process:**
-1. Fetch tournament by ID
+**Steps:**
+1. Fetch tournament by ID (error if not found)
 2. Fetch all teams for tournament
 3. Fetch all weigh-ins for tournament
-4. Call `formatForExport()` with fetched data
-5. Return CSV string
+4. Call `formatForExport()` with all data
+5. Generate filename: `tournament-{year}-{slugified-name}.csv`
 
-**Error Handling:**
-- Throw if tournament not found
-- Return errors to caller (not silent failures)
+### CSV Formatting
 
-**Example:**
+**`formatForExport(tournament, teams, weighIns): string`**
+
 ```typescript
-const csvContent = await prepareTournamentExport(tournamentId)
+// Outputs three sections:
+
+#TOURNAMENT
+name,year,location,start_date,end_date
+{tournament data}
+
+#TEAMS
+team_number,member1_first,...,status
+{team rows}
+
+#WEIGH_INS
+team_number,day,fish_count,...,big_fish
+{weigh-in rows}
+```
+
+**Special Handling:**
+- Dates formatted as ISO strings: `YYYY-MM-DD`
+- Numbers rounded to 2 decimals
+- Fields with commas/quotes properly escaped per RFC 4180
+
+### Download Helper
+
+**`downloadCSV(filename: string, csvContent: string): void`**
+
+```typescript
 const blob = new Blob([csvContent], { type: 'text/csv' })
+const link = document.createElement('a')
 const url = URL.createObjectURL(blob)
-// Download or share
+link.setAttribute('href', url)
+link.setAttribute('download', filename)
+link.click()
 ```
 
-#### `generateExportFilename(name: string, year: number): string`
+Browser-native file download (no server required).
 
-Creates a download filename from tournament metadata.
+## UI Components
 
-**Input:** Tournament name and year
+### ImportExportManager (Tab Container)
 
-**Output:** Filename string (e.g., `hpa-annual-2024-2024-03-05.csv`)
-
-**Rules:**
-- Lowercase tournament name
-- Replace spaces with hyphens
-- Remove non-alphanumeric characters (except hyphens)
-- Append year and ISO date
-- `.csv` extension
-
-**Example:**
 ```typescript
-const filename = generateExportFilename('HPA Annual Tournament', 2024)
-// filename === 'hpa-annual-tournament-2024-2024-03-05.csv'
+<Tabs value={activeTab}>
+  <ImportTab />
+  <ExportTab />
+</Tabs>
 ```
 
-## UI Component (`ImportExportManager.tsx`)
+Manages tab state and layout.
 
-### Component Structure
+### ImportTab (Upload & Import Workflow)
 
-Main component with two sub-components:
-- `ImportTab`: File upload, parsing, validation, confirmation
-- `ExportTab`: Tournament selector, download
+**States:**
+1. `upload` — Drag-drop file selection
+2. `validating` — Parsing CSV, validating data
+3. `preview` — Show tournament summary, ask for confirmation
+4. `importing` — Inserting into database
+5. `success` — Import complete, show summary
+6. `error` — Validation or import failed
 
-### State Management
+**Error Display:**
+- Grouped by section (tournament, teams, weigh-ins)
+- Shows row number for each error
+- User can fix CSV and re-upload
 
-Uses React hooks for local state; integrates with Zustand stores for data operations.
+### ExportTab (Tournament Selection & Download)
 
-**Import Tab State:**
-- `importFile`: Currently selected file
-- `parsedData`: Parsed CSV data (or null)
-- `validationErrors`: Array of error messages
-- `validationWarnings`: Array of warning messages
-- `isImporting`: Loading state during import
-- `importSuccess`: Success message (if import completed)
+**States:**
+1. `select` — Choose tournament from dropdown
+2. `exporting` — Retrieving data and formatting
+3. `success` — Download complete
+4. `error` — Export failed
 
-**Export Tab State:**
-- `selectedTournamentId`: Currently selected tournament for export
-- `isExporting`: Loading state during export
-- `exportError`: Error message (if export failed)
+## Testing Strategy
 
-### Event Flow
+### Unit Tests (csv-import.test.ts)
 
-**Import:**
-1. User selects file → `handleFileSelect()`
-2. Read file → `file.text()`
-3. Parse CSV → `parseCSV()`
-4. Validate → `validateImportedData()`
-5. Show errors/warnings or preview
-6. User clicks "Confirm Import" → `handleImportConfirm()`
-7. Import to DB → `importTournament()`
-8. Reload stores → `loadTournaments()`, `loadTeams()`, `loadWeighIns()`
-9. Show success message
+**CSV Parsing (10 tests):**
+- Simple comma-separated values
+- Quoted fields with commas
+- Escaped quotes
+- Whitespace trimming
+- Empty fields
+- Multiple teams/weigh-ins
 
-**Export:**
-1. User selects tournament
-2. Clicks "Download CSV" → `handleExport()`
-3. Fetch data → `prepareTournamentExport()`
-4. Generate filename → `generateExportFilename()`
-5. Create blob and trigger download
+**Validation (15+ tests):**
+- Valid data acceptance
+- Tournament field validation
+- Team number validation
+- Weigh-in business logic
+- Cross-section validation (weigh-in team exists)
+
+**Round-Trip (3+ tests):**
+- Parse → Format → Parse produces identical data
+- Special characters escaping
+
+### Integration Testing (Manual)
+
+**Import Flow:**
+1. Create test CSV with all scenarios
+2. Upload and validate
+3. Confirm import
+4. Verify database records
+5. Check tournament standings
+
+**Export Flow:**
+1. Create tournament in app
+2. Export to CSV
+3. Re-import same CSV
+4. Verify data integrity
 
 ## Extension Points
 
 ### Custom Validators
 
-To add business-logic validators without modifying `csv-parser.ts`:
+To add tournament-specific validation rules:
 
 ```typescript
-const { isValid, errors, warnings } = validateImportedData(data)
-
-// Add custom validation
-if (data.tournament.year < 2020) {
-  errors.push('Tournament year must be 2020 or later')
+// In import-service.ts
+export async function addCustomValidator(
+  validator: (data: ImportedData) => ValidationError[]
+) {
+  customValidators.push(validator)
 }
 
-if (!isValid) {
-  throw new Error(errors.join('\n'))
+// Then in validateBeforeImport:
+const errors = validateImportedData(data)
+for (const validator of customValidators) {
+  errors.push(...validator(data))
 }
 ```
 
-### Custom Field Mapping
+### Custom Formatters
 
-To support additional fields in future versions:
+To add extra columns on export:
 
 ```typescript
-// In parseCSV(), after extracting row values:
-const custom = {
-  ...parsed,
-  customField: row.custom_field  // New column
+export function formatForExportWithCustomFields(
+  tournament, teams, weighIns, customFields
+) {
+  const csv = formatForExport(tournament, teams, weighIns)
+  // Append custom fields section
+  return csv + "\n#CUSTOM_FIELDS\n" + formatCustomFields(customFields)
 }
 ```
 
-### Different CSV Dialects
+### Batch Imports
 
-The parser currently assumes RFC 4180 with:
-- Comma delimiter (not tab or semicolon)
-- Double-quote escaping
-
-To support other dialects, create wrapper functions:
+To import multiple CSV files:
 
 ```typescript
-export function parseCSVTabDelimited(content: string) {
-  const csv = content.replace(/\t/g, ',') // Convert tabs to commas
-  return parseCSV(csv)
+async function importBatch(csvFiles: File[]) {
+  const results = []
+  for (const file of csvFiles) {
+    const content = await file.text()
+    const data = parseCSV(content)
+    const result = await importTournament(data)
+    results.push(result)
+  }
+  return results
 }
 ```
-
-## Testing Strategy
-
-See `tests/unit/csv-parser.test.ts` for comprehensive unit tests.
-
-**Test Categories:**
-- Valid CSV parsing (minimal, complete, with edge cases)
-- Invalid CSV (missing sections, bad types, constraint violations)
-- Validation (business logic, duplicate detection, warnings)
-- Export formatting (escaping, precision, special characters)
-
-**Coverage:**
-- ✓ Happy path: minimal valid CSV
-- ✓ Edge cases: quoted fields, blank lines, whitespace
-- ✓ Error cases: type conversion, validation, constraints
-- ✓ Round-trip: export → parse → validate ≈ import
 
 ## Performance Considerations
 
-- **Parsing:** O(n) where n = file size; no re-parsing
-- **Validation:** O(m) where m = number of records; single pass
-- **Import:** O(m) database operations; could batch insert for large datasets
-- **Export:** O(m) database queries + O(n) formatting; linear
-- **File Size:** Tested up to 10,000 records; no known limits
+- **Parsing:** O(n) single-pass tokenization
+- **Validation:** O(n) single-pass with set-based lookups
+- **Export:** O(n) linear data retrieval and formatting
+- **Memory:** Minimal — no caching or intermediate allocations
 
-## Security
+For typical tournaments (10-50 teams, 20-100 weigh-ins):
+- Parse: <10ms
+- Validate: <5ms
+- Import: <50ms (includes DB writes)
+- Export: <20ms
 
-- **No external dependencies:** CSV parsing is native JavaScript
-- **Type-safe:** All inputs validated against types
-- **No code injection:** User data is treated as data, not code
-- **Local-only:** All processing happens in-browser; no network calls
-- **Input validation:** All constraints enforced before DB write
+## Security Considerations
 
-## Backwards Compatibility
+**Input Validation:**
+- All CSV values validated before database insertion
+- No raw SQL or queries — using Dexie.js ORM
+- Type coercion prevents injection
 
-Current version: 1.0
+**File Handling:**
+- File size checks (can add 50MB limit if needed)
+- CSV content validated before processing
+- No execution of code from files
 
-**Future Compatibility:**
-- Field additions: Mark as optional with default values
-- Enum changes: Validate against known values, error on unknown
-- Structure changes: Version field or date-based migration
+**Data Integrity:**
+- Unique IDs prevent accidental overwrites
+- Cross-references validated before insert
+- Transaction-like behavior (all-or-nothing import)
+
+## See Also
+
+- `docs/import-export-guide.md` — User guide
+- `tests/unit/csv-import.test.ts` — Test suite
+- `src/models/tournament.ts` — Data models
