@@ -6,3 +6,4 @@
 export * from './formula-language'
 export * from './custom-field-service'
 export * from './formula-library'
+export * from './integration'
