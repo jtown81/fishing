@@ -66,7 +66,17 @@ Team Record:
 | **Most Improved** | `day1_rank - day2_rank` (positive = improved) | Most Improved sheet |
 | **Calcutta Best Team** | `MAX(team1_grand_total, team2_grand_total, team3_grand_total)` | Calcutta sheet: INDEX/MATCH lookups |
 
-### 1.4 Current Workflow Pain Points
+### 1.4 Known Data Quality Issues (Confirmed via openpyxl analysis)
+
+- **2016-2017 name format**: Member names separated by multiple spaces (not newline characters like 2018+)
+- **2021 duplicate rows**: Team number 1 appears 3 times (one real row, two zero-weight placeholders). Deduplication required.
+- **2019 big fish column**: Contains integer 0 instead of null where no big fish was recorded (pre-2019 used null)
+- **Floating point artifacts in 2017**: Values like 7.1000000000000005 — round to 2 decimal places on import
+- **Status column (col O)**: Contains 'YES' = weight ticket was printed, NOT disqualification. Treat all non-null status values as 'active'.
+- **Tournament metadata not stored**: No location, dates, or tournament name fields exist in any sheet. Must be provided by user during import.
+- **All 4 XLSM files identical**: The 2022.xlsm, 2023.xlsm, and 2024 Rewrite files all contain the same 2016-2022 data. Import only from the primary "ChatGPT Upload" file.
+
+### 1.5 Current Workflow Pain Points
 
 1. **Manual sorting** -- Users must unprotect sheets, sort data through Excel menus, then reprotect
 2. **VBA dependency** -- Macros tied to Windows/Excel; no cross-platform support
@@ -471,41 +481,102 @@ TREND DATA (multi-year)
 ### Phase 1: Core MVP (Weeks 1-6)
 > Replace the spreadsheet for a single tournament operator
 
-**Deliverables:**
-- [ ] Project scaffolding: Vite + React + TypeScript + Tailwind + shadcn/ui
-- [ ] IndexedDB schema with Dexie.js (tournaments, teams, weighIns, logos)
-- [ ] Tournament setup: Create tournament, configure rules
-- [ ] Team CRUD: Add, edit, delete, list teams with TanStack Table (sortable columns)
-- [ ] Weigh-in entry: Quick-entry form with validation (day, fish count, weight, released, big fish)
-- [ ] Day Total calculation: `rawWeight + (fishReleased * releaseBonus)`
-- [ ] Grand Total calculation: `day1Total + day2Total`
-- [ ] Auto-computed standings with live rank
-- [ ] Weight ticket generation & print (matching XLSM Ticket layout)
-- [ ] Logo upload and management (stored in IndexedDB)
-- [ ] Logo placement on weight tickets
-- [ ] PWA setup: Service worker, manifest, offline support, installable
-- [ ] XLSM import: Parse and load historical data from existing spreadsheet using SheetJS
-- [ ] Data export: JSON and CSV
+**Status: ✅ COMPLETE**
+
+**Delivered:**
+- [x] Project scaffolding: Vite + React + TypeScript + Tailwind + shadcn/ui
+- [x] IndexedDB schema with Dexie.js (tournaments, teams, weighIns, calcuttas, logos, stats)
+- [x] Tournament setup: Create tournament, configure rules
+- [x] Team CRUD: Add, edit, delete, list teams
+- [x] Weigh-in entry: Quick-entry form with validation (day, fish count, weight, released, big fish)
+- [x] Day Total calculation: `rawWeight + (fishReleased * 0.20)`
+- [x] Grand Total calculation: `day1Total + day2Total`
+- [x] Auto-computed standings with live rank
+- [x] Weight ticket generation & print (2 per page)
+- [x] PWA setup: offline, installable
+
+**Deferred to Phase 3:**
+- XLSM historical data import (detailed spec below)
+- Logo upload/management
+- Data export (JSON and CSV)
 
 ### Phase 2: Statistics & Scoreboard (Weeks 7-10)
 > Full statistical analysis and live tournament display
 
-**Deliverables:**
-- [ ] All core statistics from XLSM Stats sheet (averages, StDev, totals, big fish)
-- [ ] Enhanced statistics: CPUE, release rate, weight distribution
-- [ ] Statistics dashboard with Recharts visualizations
-  - Weight distribution histogram
-  - Day 1 vs Day 2 scatter plot
-  - Big Fish leaderboard bar chart
-  - Year-over-year trend lines (multi-year data)
-- [ ] Most Improved report: Day 1 rank vs Day 2 rank with change calculation
-- [ ] Calcutta manager: Group generator (3 or 4 teams), buyer/amount entry, auto-scored
-- [ ] Live Scoreboard display mode (full-screen, auto-refresh, projector-optimized)
-- [ ] Parks & Wildlife management report (PDF export)
-- [ ] Historical data view: Browse past tournaments, compare years
-- [ ] Print suite: Standings, statistics, Most Improved, Calcutta results
+**Status: ✅ COMPLETE**
 
-### Phase 3: Cloud Sync & Multi-Device (Weeks 11-16)
+**Delivered:**
+- [x] Statistics engine with 19 unit tests (averages, StDev, big fish, CPUE, release rate)
+- [x] Statistics dashboard with Recharts visualizations
+  - [x] Weight distribution histogram
+  - [x] Day 1 vs Day 2 scatter plot with bubble size = grand total
+  - [x] Big Fish leaderboard bar chart
+  - [x] Most Improved report (day 1 vs day 2 rank delta)
+  - [x] 8-card statistics summary
+- [x] Calcutta manager (Fisher-Yates shuffle, 3 or 4 teams, buyer/amount, scoring)
+- [x] Live Scoreboard display mode (full-screen dark theme, auto-refresh, standings + stats modes)
+- [x] Parks & Wildlife report (CSV export for agency submission)
+- [x] Print suite: Standings, statistics, weight tickets
+
+### Phase 3: Historical Data Import
+> Import 2016-2022 tournament data from the XLSM reference file
+
+**Status: IN PROGRESS — Spec complete, implementation starting**
+
+#### Technical Specification
+
+**Source**: `Fishing Tourney 2024- ChatGPT Upload.xlsm` — year sheets '2016' through '2022'
+**Library**: SheetJS (`xlsx` v0.18.5, already installed)
+
+**Column index mapping for year sheets** (row 0 = headers, rows 1+ = data):
+```
+[0] Place (skip)    [1] Team #    [2] Name (members)
+[3] D1 Fish count   [4] D1 Weight [5] D1 Released
+[6] D1 Total (skip) [7] D1 Big fish
+[8] D2 Fish count   [9] D2 Weight [10] D2 Released
+[11] D2 Total (skip) [12] Grand Total (skip)
+[13] D2 Big fish    [14] Status
+```
+
+**Name parsing**:
+- If `\n` in name: split on `\n` → 2 members
+- If no `\n`: split on 2+ spaces → 2 members
+- Each member: split on last space → firstName + lastName
+
+**Deduplication**: Per team number, keep the row with non-zero weight. If all rows are zero, keep only the first.
+
+**Synthetic fields** (not in XLSM):
+- `receivedBy`, `issuedBy`: `'imported'`
+- `timestamp`: `new Date(year, 0, 1)` for Day 1, `new Date(year, 0, 2)` for Day 2
+- Tournament `startDate`/`endDate`: `new Date(year, 0, 1)` / `new Date(year, 0, 2)`
+- Tournament `name`: User provides base name (e.g. "HPA Annual Tournament") → stored as `{name} {year}`
+- Tournament `location`: User provides during import, applied to all years
+
+**Import wizard** (4 steps):
+1. **Upload**: Drag-and-drop `.xlsm` file
+2. **Configure**: Tournament name + location (year auto-appended)
+3. **Preview**: Table of years found, team counts, warnings
+4. **Import**: Progress per year → summary
+
+**Architecture**:
+- `src/modules/import/xlsm-parser.ts` — Pure functions: parse, name parsing, dedup
+- `src/modules/import/import-service.ts` — Bulk Dexie insert, progress callback
+- `src/modules/import/import-store.ts` — Zustand wizard state
+- `src/components/import/XlsmImporter.tsx` — 4-step wizard UI
+- Navigation: "Import History" sidebar item
+
+**Validation**: After import, verify:
+- 2022: Team #10 (Brandon Seitz / Rob Crandall) = 18.00 lbs (place 1)
+- 2022: Team #44 (Matt James / Chad Porsch) = 13.24 lbs (place 3)
+
+**Deliverables**:
+- [ ] `xlsm-parser.ts` with unit tests
+- [ ] `import-service.ts` with idempotent bulk insert
+- [ ] `import-store.ts` (Zustand wizard state)
+- [ ] `XlsmImporter.tsx` (4-step wizard UI)
+- [ ] Sidebar nav + routing integration
+
+### Phase 4: Cloud Sync & Multi-Device (Weeks 11-16)
 > Enable cloud backup and multi-device access
 
 **Deliverables:**
@@ -518,7 +589,7 @@ TREND DATA (multi-year)
 - [ ] QR code generation for spectator access
 - [ ] Data owned by user -- cloud is optional backup
 
-### Phase 4: Subscription & Multi-Tenant (Weeks 17-24)
+### Phase 5: Subscription & Multi-Tenant (Weeks 17-24)
 > SaaS product launch
 
 **Deliverables:**
@@ -533,7 +604,7 @@ TREND DATA (multi-year)
 - [ ] API for third-party integrations (live scores to social media, etc.)
 - [ ] Capacitor wrapper: Native iOS and Android apps in app stores
 
-### Phase 5: Advanced Features (Ongoing)
+### Phase 6: Advanced Features (Ongoing)
 > Competitive differentiation
 
 **Deliverables:**
