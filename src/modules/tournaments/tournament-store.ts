@@ -6,6 +6,7 @@ import { create } from 'zustand'
 import { db } from '@db/database'
 import type { Tournament } from '@models/tournament'
 import { enqueueMutation } from '@modules/sync/sync-engine'
+import { applyBranding, resetBranding } from '@hooks/useBranding'
 import { useSubscriptionStore } from '@modules/subscription'
 import { useRoleStore } from '@modules/roles'
 
@@ -28,7 +29,14 @@ export const useTournamentStore = create<TournamentStore>((set) => ({
   tournaments: [],
   isLoading: false,
 
-  setCurrentTournament: (tournament) => set({ currentTournament: tournament }),
+  setCurrentTournament: (tournament) => {
+    if (tournament?.branding) {
+      applyBranding(tournament.branding)
+    } else {
+      resetBranding()
+    }
+    set({ currentTournament: tournament })
+  },
 
   loadTournaments: async () => {
     set({ isLoading: true })

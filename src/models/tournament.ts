@@ -9,6 +9,15 @@ export interface TournamentRules {
   days: number // Usually 2
 }
 
+export interface TournamentBranding {
+  primaryColor?: string // Hex color (e.g., #1f2937)
+  secondaryColor?: string // Hex color
+  logoUrl?: string // Supabase Storage URL
+  customDomain?: string // e.g., mytournament.example.com
+  appName?: string // Custom app title
+  appDescription?: string // Custom description
+}
+
 export interface Tournament {
   id: string
   name: string
@@ -19,6 +28,7 @@ export interface Tournament {
   logoId?: string // Reference to Logo in IndexedDB
   rules: TournamentRules
   publicSlug?: string // Set when cloud sync is enabled; used for spectator links
+  branding?: TournamentBranding // White-label branding (Phase 5)
   createdAt: Date
   updatedAt: Date
 }

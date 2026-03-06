@@ -18,6 +18,7 @@ CREATE TABLE tournaments (
   end_date DATE,
   rules JSONB,
   public_slug TEXT UNIQUE,
+  branding JSONB,                        -- Phase 5: {primaryColor, secondaryColor, logoUrl, customDomain, appName, appDescription}
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -149,3 +150,37 @@ CREATE POLICY "Operators write teams" ON teams
       WHERE m.tournament_id = teams.tournament_id
         AND m.user_id = auth.uid() AND m.role IN ('owner','operator'))
   );
+
+-- ---------------------------------------------------------------------------
+-- Phase 5: REST API (Third-party integrations)
+-- ---------------------------------------------------------------------------
+
+CREATE TABLE api_keys (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+  key_hash TEXT NOT NULL UNIQUE,               -- Hash of API key (not the key itself)
+  name TEXT NOT NULL,                          -- User-friendly name (e.g., "Mobile App")
+  active BOOLEAN DEFAULT true,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  last_used_at TIMESTAMPTZ
+);
+ALTER TABLE api_keys ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users manage own API keys" ON api_keys
+  FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+
+CREATE TABLE api_requests (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+  endpoint TEXT NOT NULL,                      -- e.g., /api/tournaments/123/standings
+  method TEXT NOT NULL,                        -- GET, POST, PUT, DELETE
+  status_code INTEGER,
+  ip_address INET,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+ALTER TABLE api_requests ENABLE ROW LEVEL SECURITY;
+-- Only admins can view API request logs (for billing/monitoring)
+CREATE POLICY "Users view own requests" ON api_requests
+  FOR SELECT USING (auth.uid() = user_id);
+
+-- Index for rate limit lookups
+CREATE INDEX idx_api_requests_user_date ON api_requests(user_id, created_at DESC);

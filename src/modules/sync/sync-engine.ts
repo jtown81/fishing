@@ -211,6 +211,7 @@ function mapPayloadToDb(
       end_date: payload.endDate,
       rules: payload.rules,
       public_slug: payload.publicSlug ?? null,
+      branding: payload.branding ?? null,
       updated_at: payload.updatedAt
     }
   }
