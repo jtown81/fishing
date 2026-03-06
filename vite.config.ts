@@ -51,6 +51,11 @@ export default defineConfig({
       }
     })
   ],
+  build: {
+    rollupOptions: {
+      external: ['@capacitor/geolocation']
+    }
+  },
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),

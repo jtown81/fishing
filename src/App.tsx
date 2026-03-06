@@ -14,7 +14,7 @@ import { useRoleStore } from '@modules/roles'
 import { useAnglerStore } from '@modules/anglers'
 
 export default function App() {
-  const [view, setView] = useState<'dashboard' | 'statistics' | 'calcutta' | 'scoreboard' | 'reports' | 'setup' | 'teams' | 'weigh-in' | 'import-export' | 'settings' | 'anglers' | 'angler-detail'>('dashboard')
+  const [view, setView] = useState<'dashboard' | 'statistics' | 'calcutta' | 'scoreboard' | 'reports' | 'setup' | 'teams' | 'weigh-in' | 'import-export' | 'settings' | 'anglers' | 'angler-detail' | 'admin'>('dashboard')
   const [selectedAnglerId, setSelectedAnglerId] = useState<string | null>(null)
   const [initialized, setInitialized] = useState(false)
 

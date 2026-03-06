@@ -184,6 +184,9 @@ function mapPayloadToDb(
       big_fish_weight: payload.bigFishWeight ?? null,
       received_by: payload.receivedBy,
       issued_by: payload.issuedBy,
+      photo_data_url: payload.photoDataUrl ?? null,
+      received_by_signature: payload.receivedBySignature ?? null,
+      fishing_location: payload.fishingLocation ?? null,
       timestamp: payload.timestamp,
       updated_at: payload.updatedAt
     }
@@ -228,6 +231,9 @@ function mapWeighInFromDb(row: Record<string, unknown>): WeighIn {
     bigFishWeight: row.big_fish_weight as number | undefined,
     receivedBy: row.received_by as string,
     issuedBy: row.issued_by as string,
+    photoDataUrl: row.photo_data_url as string | undefined,
+    receivedBySignature: row.received_by_signature as string | undefined,
+    fishingLocation: row.fishing_location as { lat: number; lng: number } | undefined,
     timestamp: new Date(row.timestamp as string),
     createdAt: new Date(row.created_at as string),
     updatedAt: new Date(row.updated_at as string)

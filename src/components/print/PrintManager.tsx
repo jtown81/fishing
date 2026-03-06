@@ -4,21 +4,32 @@
  */
 
 import { useState, useRef } from 'react'
+import type { WeighIn } from '@models/tournament'
 import { useTournamentStore } from '@modules/tournaments/tournament-store'
+import { useWeighInStore } from '@modules/weigh-ins/weigh-in-store'
 import { useStandings } from '@hooks/useStandings'
 import { useTournamentStats } from '@modules/stats'
 import StandingsPrint from './StandingsPrint'
+import WeightTicket from './WeightTicket'
 import { printContent, getPrintDate } from '@utils/print'
-import { Printer, CheckCircle, AlertCircle } from 'lucide-react'
+import { shareUrl } from '@lib/share'
+import { Printer, Share2, CheckCircle, AlertCircle } from 'lucide-react'
 
 export default function PrintManager() {
   const currentTournament = useTournamentStore((s) => s.currentTournament)
+  const weighIns = useWeighInStore((s) => s.weighIns)
   const standings = useStandings()
   const { coreStats } = useTournamentStats()
 
   const [printType, setPrintType] = useState<'standings' | 'tickets' | 'stats'>('standings')
   const [ticketDay, setTicketDay] = useState<1 | 2>(1)
   const printRef = useRef<HTMLDivElement>(null)
+
+  const handleShare = async () => {
+    if (!currentTournament) return
+    const title = `${currentTournament.name} ${currentTournament.year}`
+    await shareUrl(title, `${window.location.origin}?spectator=${currentTournament.publicSlug || ''}`)
+  }
 
   if (!currentTournament) {
     return (
@@ -133,6 +144,28 @@ export default function PrintManager() {
           />
         )}
 
+        {printType === 'tickets' && (
+          <div className="bg-white p-4 min-h-screen">
+            {weighIns
+              .filter((w) => w.day === ticketDay)
+              .reduce<WeighIn[][]>((pages, weighIn, idx) => {
+                if (idx % 2 === 0) pages.push([])
+                pages[pages.length - 1].push(weighIn)
+                return pages
+              }, [])
+              .map((pair, idx) => (
+                <WeightTicket
+                  key={idx}
+                  weighIn1={pair[0]}
+                  weighIn2={pair[1]}
+                  standings={new Map(standings.map((s) => [s.teamId, s.rank]))}
+                  teamMap={new Map()} // Would need to pass team members here
+                  tournamentName={currentTournament.name}
+                />
+              ))}
+          </div>
+        )}
+
         {printType === 'stats' && (
           <div className="p-8">
             <div className="text-center mb-8 border-b-2 border-black pb-4">
@@ -161,14 +194,26 @@ export default function PrintManager() {
         )}
       </div>
 
-      {/* Print Button */}
-      <button
-        onClick={handlePrint}
-        className="w-full flex items-center justify-center gap-2 py-4 px-6 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition text-lg"
-      >
-        <Printer size={20} />
-        Print {printType === 'standings' ? 'Standings' : printType === 'tickets' ? `Day ${ticketDay} Tickets` : 'Statistics'}
-      </button>
+      {/* Print and Share Buttons */}
+      <div className="flex gap-3">
+        <button
+          onClick={handlePrint}
+          className="flex-1 flex items-center justify-center gap-2 py-4 px-6 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition text-lg"
+        >
+          <Printer size={20} />
+          Print {printType === 'standings' ? 'Standings' : printType === 'tickets' ? `Day ${ticketDay} Tickets` : 'Statistics'}
+        </button>
+
+        {currentTournament?.publicSlug && 'share' in navigator && (
+          <button
+            onClick={handleShare}
+            className="flex-1 flex items-center justify-center gap-2 py-4 px-6 bg-green-600 text-white font-bold rounded-lg hover:bg-green-700 transition text-lg"
+          >
+            <Share2 size={20} />
+            Share Live Link
+          </button>
+        )}
+      </div>
 
       {/* Tips */}
       <div className="bg-green-50 border border-green-200 rounded-lg p-4">

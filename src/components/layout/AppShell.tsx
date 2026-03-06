@@ -14,8 +14,9 @@ import TeamList from '@components/teams/TeamList'
 import WeighInForm from '@components/weigh-in/WeighInForm'
 import AnglerList from '@components/anglers/AnglerList'
 import AnglerProfile from '@components/anglers/AnglerProfile'
+import AdminDashboard from '@components/admin/AdminDashboard'
 
-type AppView = 'dashboard' | 'statistics' | 'calcutta' | 'scoreboard' | 'reports' | 'setup' | 'teams' | 'weigh-in' | 'import-export' | 'settings' | 'anglers' | 'angler-detail'
+type AppView = 'dashboard' | 'statistics' | 'calcutta' | 'scoreboard' | 'reports' | 'setup' | 'teams' | 'weigh-in' | 'import-export' | 'settings' | 'anglers' | 'angler-detail' | 'admin'
 
 interface AppShellProps {
   currentView: AppView
@@ -52,6 +53,8 @@ export default function AppShell({ currentView, setCurrentView, selectedAnglerId
         return <ImportExportManager />
       case 'settings':
         return <SettingsView />
+      case 'admin':
+        return <AdminDashboard />
       case 'anglers':
         return (
           <AnglerList

@@ -4,7 +4,9 @@ import { useTeamStore } from '@modules/teams/team-store'
 import { useWeighInStore } from '@modules/weigh-ins/weigh-in-store'
 import { calculateDayTotal } from '@utils/calculations'
 import { capturePhoto } from '@lib/camera'
-import { Camera, X } from 'lucide-react'
+import { getCurrentLocation } from '@lib/gps'
+import { Camera, X, Pen, MapPin } from 'lucide-react'
+import SignaturePad from '@components/ui/SignaturePad'
 
 export default function WeighInForm() {
   const currentTournament = useTournamentStore((s) => s.currentTournament)
@@ -23,6 +25,10 @@ export default function WeighInForm() {
   })
   const [photoDataUrl, setPhotoDataUrl] = useState<string | null>(null)
   const [isCapturing, setIsCapturing] = useState(false)
+  const [signatureDataUrl, setSignatureDataUrl] = useState<string | null>(null)
+  const [showSignaturePad, setShowSignaturePad] = useState(false)
+  const [fishingLocation, setFishingLocation] = useState<{ lat: number; lng: number } | null>(null)
+  const [isCapturingLocation, setIsCapturingLocation] = useState(false)
 
   const releaseBonus = currentTournament?.rules.releaseBonus || 0.2
 
@@ -51,6 +57,20 @@ export default function WeighInForm() {
     }
   }
 
+  const handleCaptureLocation = async () => {
+    setIsCapturingLocation(true)
+    try {
+      const location = await getCurrentLocation()
+      if (location) {
+        setFishingLocation(location)
+      } else {
+        alert('Unable to capture location. Check permissions or try again.')
+      }
+    } finally {
+      setIsCapturingLocation(false)
+    }
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
@@ -75,6 +95,8 @@ export default function WeighInForm() {
         receivedBy: formData.receivedBy,
         issuedBy: formData.issuedBy,
         photoDataUrl: photoDataUrl ?? undefined,
+        receivedBySignature: signatureDataUrl ?? undefined,
+        fishingLocation: fishingLocation ?? undefined,
         timestamp: new Date()
       })
 
@@ -90,6 +112,9 @@ export default function WeighInForm() {
         issuedBy: ''
       })
       setPhotoDataUrl(null)
+      setSignatureDataUrl(null)
+      setShowSignaturePad(false)
+      setFishingLocation(null)
 
       alert('Weigh-in recorded successfully')
     } catch (error) {
@@ -280,6 +305,76 @@ export default function WeighInForm() {
               <button
                 type="button"
                 onClick={() => setPhotoDataUrl(null)}
+                className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-0.5 hover:bg-red-600"
+              >
+                <X size={12} />
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Signature capture */}
+        <div>
+          <button
+            type="button"
+            onClick={() => setShowSignaturePad(!showSignaturePad)}
+            className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+          >
+            <Pen size={16} />
+            {signatureDataUrl ? 'Replace Signature' : 'Capture Signature'}
+          </button>
+
+          {signatureDataUrl && (
+            <div className="relative inline-block mt-2">
+              <img
+                src={signatureDataUrl}
+                alt="Signature"
+                className="h-20 border border-gray-200 rounded-lg"
+              />
+              <button
+                type="button"
+                onClick={() => setSignatureDataUrl(null)}
+                className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-0.5 hover:bg-red-600"
+              >
+                <X size={12} />
+              </button>
+            </div>
+          )}
+
+          {showSignaturePad && (
+            <div className="mt-3">
+              <SignaturePad
+                onCapture={(url) => {
+                  setSignatureDataUrl(url)
+                  setShowSignaturePad(false)
+                }}
+                onClear={() => setSignatureDataUrl(null)}
+              />
+            </div>
+          )}
+        </div>
+
+        {/* GPS location capture */}
+        <div>
+          <button
+            type="button"
+            onClick={handleCaptureLocation}
+            disabled={isCapturingLocation}
+            className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-50 transition-colors"
+          >
+            <MapPin size={16} />
+            {isCapturingLocation ? 'Capturing…' : 'Capture Location'}
+          </button>
+
+          {fishingLocation && (
+            <div className="mt-2 inline-block bg-blue-50 border border-blue-200 rounded-lg px-3 py-2">
+              <p className="text-sm text-gray-600">Location Captured</p>
+              <p className="text-sm font-mono text-blue-900">
+                {fishingLocation.lat.toFixed(3)}°N, {fishingLocation.lng.toFixed(3)}°W
+              </p>
+              <button
+                type="button"
+                onClick={() => setFishingLocation(null)}
                 className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-0.5 hover:bg-red-600"
               >
                 <X size={12} />

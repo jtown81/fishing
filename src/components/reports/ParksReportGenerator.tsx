@@ -13,8 +13,9 @@ import {
   exportParksReportCSV,
   generateParksReportFilename
 } from '@modules/reports/parks-report-service'
+import { shareUrl } from '@lib/share'
 import { formatWeight, formatPercent } from '@utils/formatting'
-import { Download, AlertCircle, FileText } from 'lucide-react'
+import { Download, Share2, AlertCircle, FileText } from 'lucide-react'
 
 export default function ParksReportGenerator() {
   const currentTournament = useTournamentStore((s) => s.currentTournament)
@@ -46,6 +47,11 @@ export default function ParksReportGenerator() {
     document.body.removeChild(link)
   }
 
+  const handleShare = async () => {
+    if (!report) return
+    await shareUrl(report.eventName, window.location.href)
+  }
+
   if (!currentTournament) {
     return (
       <div className="bg-white rounded-lg shadow p-6 border border-gray-200 text-center">
@@ -73,8 +79,8 @@ export default function ParksReportGenerator() {
 
   return (
     <div className="space-y-6">
-      {/* Export Button */}
-      <div className="flex gap-3">
+      {/* Export and Share Buttons */}
+      <div className="flex gap-3 flex-wrap">
         <button
           onClick={handleExportCSV}
           className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition"
@@ -82,6 +88,17 @@ export default function ParksReportGenerator() {
           <Download size={18} />
           Export as CSV
         </button>
+
+        {report && 'share' in navigator && (
+          <button
+            onClick={handleShare}
+            className="flex items-center gap-2 px-6 py-3 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition"
+          >
+            <Share2 size={18} />
+            Share Report
+          </button>
+        )}
+
         <p className="text-sm text-gray-600 flex items-center">
           CSV format for game agencies
         </p>

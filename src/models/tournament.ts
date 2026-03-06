@@ -52,6 +52,7 @@ export interface WeighIn {
   issuedBy: string
   photoDataUrl?: string // base64 JPEG stored in IndexedDB (Phase 6a)
   receivedBySignature?: string // base64 canvas signature (Phase 6c)
+  fishingLocation?: { lat: number; lng: number } // GPS coordinates (Phase 6d)
   timestamp: Date
   createdAt: Date
   updatedAt: Date

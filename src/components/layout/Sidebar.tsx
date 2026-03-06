@@ -3,6 +3,7 @@ import {
   Download,
   FileText,
   Gavel,
+  LayoutDashboard,
   LineChart,
   Monitor,
   Settings,
@@ -13,8 +14,9 @@ import {
   X
 } from 'lucide-react'
 import { useTournamentStore } from '@modules/tournaments/tournament-store'
+import { useSubscriptionStore } from '@modules/subscription'
 
-type AppView = 'dashboard' | 'statistics' | 'calcutta' | 'scoreboard' | 'reports' | 'setup' | 'teams' | 'weigh-in' | 'import-export' | 'settings' | 'anglers' | 'angler-detail'
+type AppView = 'dashboard' | 'statistics' | 'calcutta' | 'scoreboard' | 'reports' | 'setup' | 'teams' | 'weigh-in' | 'import-export' | 'settings' | 'anglers' | 'angler-detail' | 'admin'
 
 interface SidebarProps {
   currentView: AppView
@@ -30,71 +32,6 @@ interface NavItem {
   requiresTournament?: boolean
 }
 
-const navItems: NavItem[] = [
-  {
-    label: 'Dashboard',
-    view: 'dashboard',
-    icon: <BarChart3 size={20} />,
-    requiresTournament: true
-  },
-  {
-    label: 'Statistics',
-    view: 'statistics',
-    icon: <LineChart size={20} />,
-    requiresTournament: true
-  },
-  {
-    label: 'Calcutta',
-    view: 'calcutta',
-    icon: <Gavel size={20} />,
-    requiresTournament: true
-  },
-  {
-    label: 'Live Scoreboard',
-    view: 'scoreboard',
-    icon: <Monitor size={20} />,
-    requiresTournament: true
-  },
-  {
-    label: 'Reports',
-    view: 'reports',
-    icon: <FileText size={20} />,
-    requiresTournament: true
-  },
-  {
-    label: 'Tournament Setup',
-    view: 'setup',
-    icon: <Zap size={20} />
-  },
-  {
-    label: 'Teams',
-    view: 'teams',
-    icon: <Users size={20} />,
-    requiresTournament: true
-  },
-  {
-    label: 'Weigh-In',
-    view: 'weigh-in',
-    icon: <Weight size={20} />,
-    requiresTournament: true
-  },
-  {
-    label: 'Anglers',
-    view: 'anglers',
-    icon: <User size={20} />
-  },
-  {
-    label: 'Import / Export',
-    view: 'import-export',
-    icon: <Download size={20} />
-  },
-  {
-    label: 'Settings',
-    view: 'settings',
-    icon: <Settings size={20} />
-  }
-]
-
 export default function Sidebar({
   currentView,
   setCurrentView,
@@ -102,6 +39,78 @@ export default function Sidebar({
   setOpen
 }: SidebarProps) {
   const currentTournament = useTournamentStore((s) => s.currentTournament)
+  const { tier } = useSubscriptionStore()
+
+  const navItems: NavItem[] = [
+    {
+      label: 'Dashboard',
+      view: 'dashboard',
+      icon: <BarChart3 size={20} />,
+      requiresTournament: true
+    },
+    {
+      label: 'Statistics',
+      view: 'statistics',
+      icon: <LineChart size={20} />,
+      requiresTournament: true
+    },
+    {
+      label: 'Calcutta',
+      view: 'calcutta',
+      icon: <Gavel size={20} />,
+      requiresTournament: true
+    },
+    {
+      label: 'Live Scoreboard',
+      view: 'scoreboard',
+      icon: <Monitor size={20} />,
+      requiresTournament: true
+    },
+    {
+      label: 'Reports',
+      view: 'reports',
+      icon: <FileText size={20} />,
+      requiresTournament: true
+    },
+    {
+      label: 'Tournament Setup',
+      view: 'setup',
+      icon: <Zap size={20} />
+    },
+    {
+      label: 'Teams',
+      view: 'teams',
+      icon: <Users size={20} />,
+      requiresTournament: true
+    },
+    {
+      label: 'Weigh-In',
+      view: 'weigh-in',
+      icon: <Weight size={20} />,
+      requiresTournament: true
+    },
+    {
+      label: 'Anglers',
+      view: 'anglers',
+      icon: <User size={20} />
+    },
+    {
+      label: 'Import / Export',
+      view: 'import-export',
+      icon: <Download size={20} />
+    },
+    {
+      label: 'Settings',
+      view: 'settings',
+      icon: <Settings size={20} />
+    },
+    ...(tier === 'org' ? [{
+      label: 'Admin',
+      view: 'admin' as AppView,
+      icon: <LayoutDashboard size={20} />,
+      requiresTournament: false
+    }] : [])
+  ]
 
   const handleNavClick = (view: AppView) => {
     setCurrentView(view)

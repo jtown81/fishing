@@ -47,6 +47,9 @@ export interface ParksReport {
   } | null
   weightStdDev: number
 
+  // GPS locations (anonymized/rounded)
+  locations?: Array<{ lat: number; lng: number }>
+
   // Statistics
   stats: CoreStats
 }
@@ -95,6 +98,14 @@ export function generateParksReport(
     }
   }
 
+  // Extract and round GPS locations for privacy
+  const locations = weighIns
+    .filter((w) => w.fishingLocation)
+    .map((w) => ({
+      lat: Math.round(w.fishingLocation!.lat * 1000) / 1000,
+      lng: Math.round(w.fishingLocation!.lng * 1000) / 1000
+    }))
+
   return {
     eventName: tournament.name,
     location: tournament.location || 'Unknown Location',
@@ -121,6 +132,8 @@ export function generateParksReport(
     medianFishWeight: medianWeight,
     largestFish,
     weightStdDev: coreStats.day1StdDev, // Use day 1 as representative
+
+    ...(locations.length > 0 && { locations }),
 
     stats: coreStats
   }
@@ -195,6 +208,16 @@ export function exportParksReportCSV(report: ParksReport): string {
   lines.push(`Big Fish Day 2,${report.stats.bigFishDay2 ? report.stats.bigFishDay2.toFixed(2) : 'N/A'} lbs`)
   lines.push(`Avg Big Fish,${report.stats.avgBigFish.toFixed(2)} lbs`)
   lines.push(`Teams With Fish,${report.stats.teamsWithFish}`)
+  lines.push('')
+
+  // Fishing locations (if available)
+  if (report.locations && report.locations.length > 0) {
+    lines.push('FISHING LOCATIONS')
+    lines.push('Latitude,Longitude')
+    report.locations.forEach((loc) => {
+      lines.push(`${loc.lat.toFixed(3)},${loc.lng.toFixed(3)}`)
+    })
+  }
 
   return lines.join('\n')
 }

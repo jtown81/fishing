@@ -86,7 +86,14 @@ export function WeightTicket({
       {/* Signature Lines */}
       <div className="flex gap-4 text-xs mt-2 pt-2 border-t border-gray-400">
         <div className="flex-1">
-          <p className="border-t border-gray-400 pt-1">Received By: ___________</p>
+          {weighIn.receivedBySignature ? (
+            <div>
+              <p className="text-xs font-semibold mb-1">Received By:</p>
+              <img src={weighIn.receivedBySignature} alt="Signature" className="h-12" />
+            </div>
+          ) : (
+            <p className="border-t border-gray-400 pt-1">Received By: ___________</p>
+          )}
         </div>
         <div className="flex-1">
           <p className="border-t border-gray-400 pt-1">Issued By: ___________</p>

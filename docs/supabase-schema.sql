@@ -45,6 +45,9 @@ CREATE TABLE weigh_ins (
   received_by TEXT,
   issued_by TEXT,
   timestamp TIMESTAMPTZ,
+  photo_data_url TEXT,                -- Phase 6d: base64 JPEG
+  received_by_signature TEXT,         -- Phase 6d: base64 PNG signature
+  fishing_location JSONB,             -- Phase 6d: {lat: number, lng: number}
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
