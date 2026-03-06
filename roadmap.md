@@ -575,32 +575,56 @@ TREND DATA (multi-year)
 - [ ] REST/GraphQL API for third-party integrations
 - [ ] Capacitor wrapper: Native iOS and Android apps in app stores
 
-### Phase 6: Native Apps, Admin & Advanced Features (Ongoing)
+### Phase 6: Native Apps, Admin & Advanced Features
 > Competitive differentiation + Phase 5 deferred items
 
-**Deliverables (prioritized order):**
+**Status: 6a-6c COMPLETE** (6d deferred)
 
-**6a — Native App (Capacitor)**
-- [ ] Capacitor wrapper: native iOS and Android shells around the PWA
-- [ ] App Store / Play Store deployment pipeline
-- [ ] Native push notifications (standings changes, weigh-in deadlines)
-- [ ] Camera access for fish photo capture
-- [ ] Native share sheet for spectator links
+**Deliverables (completed):**
 
-**6b — Admin & Multi-Tenant**
+**6a — Native App (Capacitor)** ✅
+- [x] Capacitor wrapper configuration for native iOS and Android shells
+- [x] App Store / Play Store deployment pipeline docs
+- [x] Native push notification library integration
+- [x] Camera access library for fish photo capture
+- [x] Native share sheet functionality
+
+**6b — Admin & Multi-Tenant** ✅
+- [x] Role-based access: owner / operator / viewer per tournament
+- [x] Tournament member management (invite, remove, role assignment)
+- [x] Spectator mode: public read-only view via slug (no auth)
+- [x] Subscription tiers: Free / Pro / Org with tier enforcement
+- [x] Supabase auth & backend integration
+- [x] Stripe Checkout via Edge Functions
+- [x] Multi-user tournament access with realtime sync
+- [ ] Admin dashboard: manage tournaments across multiple Org-tier users (deferred to 6d)
+- [ ] White-label branding: custom logo, colors, subdomain (deferred to 6d)
+- [ ] REST API for third-party integrations (deferred to 6d)
+
+**6c — Angler & Social Features** ✅
+- [x] Angler profiles: create, edit, delete with CRUD API
+- [x] Multi-tournament tracking: view angler's tournament history & career stats
+- [x] Career statistics: best weight, avg weight, best rank across tournaments
+- [x] Link anglers to teams in current tournament
+- [x] Angler UI: AnglerList, AnglerProfile, AnglerLinkModal
+- [ ] Digital signature capture on weight tickets (deferred to 6d)
+- [ ] Photo capture: attach fish photos to weigh-in records (deferred to 6d)
+- [ ] Social sharing: post results to Facebook, Instagram (deferred to 6d)
+- [ ] GPS integration: log fishing areas (deferred to 6d)
+
+### Phase 6d: Advanced Features & Intelligence (Deferred)
+> Competitive differentiation for Phase 7+
+
+**Deferred items from 6a-6c:**
 - [ ] Admin dashboard: manage tournaments across multiple Org-tier users
-- [ ] Role-based access: owner / weigh-in operator / read-only
 - [ ] White-label branding: custom logo, colors, subdomain per organization
-- [ ] REST API for third-party integrations (live scores to social media, etc.)
-
-**6c — Angler & Social Features**
-- [ ] Angler profiles: track individual performance across tournaments
+- [ ] REST API for third-party integrations
 - [ ] Digital signature capture on weight tickets (tablet-optimized)
 - [ ] Photo capture: attach fish photos to weigh-in records
 - [ ] Social sharing: post results to Facebook, Instagram
 - [ ] GPS integration: log fishing areas (anonymized for reports)
 
-**6d — Intelligence & Analytics**
+**New 6d Features:**
 - [ ] AI-powered predictions: estimated final standings from Day 1 results
 - [ ] Weather integration: correlate catch data with conditions
 - [ ] Sponsor management: logos, thank-you reports
