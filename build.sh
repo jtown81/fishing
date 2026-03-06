@@ -26,8 +26,10 @@ show_menu() {
     echo "  7) Clean Build (delete dist/ and rebuild)"
     echo "  8) Full Build Pipeline (test + typecheck + build)"
     echo "  9) Full Build Pipeline + Start Server"
+    echo " 10) Dev Server + Seed Test Data"
+    echo " 11) Kill Running Dev/Preview Servers"
     echo ""
-    read -p "Enter your choice (1-9): " choice
+    read -p "Enter your choice (1-11): " choice
 }
 
 # Function to run dev server
@@ -139,6 +141,37 @@ run_full_pipeline_and_serve() {
     pnpm preview
 }
 
+# Function to kill running vite dev/preview servers
+kill_servers() {
+    echo ""
+    echo "Looking for running Vite servers..."
+    local pids
+    pids=$(pgrep -f "vite" 2>/dev/null)
+    if [ -z "$pids" ]; then
+        echo "No running Vite servers found."
+    else
+        echo "Found PIDs: $pids"
+        kill $pids 2>/dev/null && echo "✓ Servers killed." || echo "⚠️  Some processes could not be killed (may need sudo)."
+    fi
+}
+
+# Function to run dev server and auto-seed via ?seed URL param
+run_dev_with_seed() {
+    local port=4444
+    echo ""
+    echo "Starting development server..."
+    echo ""
+    echo "┌──────────────────────────────────────────────────────────┐"
+    echo "│  Open this URL to auto-seed 7 tournaments (2016-2022):   │"
+    echo "│                                                          │"
+    echo "│    http://localhost:$port/?seed                           │"
+    echo "│                                                          │"
+    echo "│  The app will seed then reload automatically.            │"
+    echo "└──────────────────────────────────────────────────────────┘"
+    echo ""
+    pnpm dev
+}
+
 # Main logic
 show_menu
 
@@ -170,8 +203,14 @@ case $choice in
     9)
         run_full_pipeline_and_serve
         ;;
+    10)
+        run_dev_with_seed
+        ;;
+    11)
+        kill_servers
+        ;;
     *)
-        echo "Invalid choice. Please enter a number between 1-9."
+        echo "Invalid choice. Please enter a number between 1-11."
         exit 1
         ;;
 esac

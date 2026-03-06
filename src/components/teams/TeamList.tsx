@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import { useTournamentStore } from '@modules/tournaments/tournament-store'
 import { useTeamStore } from '@modules/teams/team-store'
-import { Plus, Trash2 } from 'lucide-react'
+import { Plus, Trash2, Link } from 'lucide-react'
 import TeamForm from './TeamForm'
-import type { TeamMember } from '@models/tournament'
+import type { Team, TeamMember } from '@models/tournament'
+import AnglerLinkModal from '@components/anglers/AnglerLinkModal'
 
 export default function TeamList() {
   const currentTournament = useTournamentStore((s) => s.currentTournament)
@@ -12,6 +13,7 @@ export default function TeamList() {
   const deleteTeam = useTeamStore((s) => s.deleteTeam)
 
   const [showForm, setShowForm] = useState(false)
+  const [linkTeam, setLinkTeam] = useState<Team | null>(null)
 
   if (!currentTournament) {
     return (
@@ -116,18 +118,37 @@ export default function TeamList() {
                     </span>
                   </td>
                   <td className="px-4 py-3 text-right">
-                    <button
-                      onClick={() => handleDeleteTeam(team.id)}
-                      className="text-red-600 hover:text-red-800 transition-colors"
-                    >
-                      <Trash2 size={18} />
-                    </button>
+                    <div className="flex items-center gap-2 justify-end">
+                      <button
+                        onClick={() => setLinkTeam(team)}
+                        className="flex items-center gap-1 text-blue-600 hover:text-blue-800 transition-colors text-xs"
+                        title="Link angler profiles"
+                      >
+                        <Link size={16} />
+                        Anglers
+                      </button>
+                      <button
+                        onClick={() => handleDeleteTeam(team.id)}
+                        className="text-red-600 hover:text-red-800 transition-colors"
+                      >
+                        <Trash2 size={18} />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
+      )}
+
+      {/* Angler link modal */}
+      {linkTeam && currentTournament && (
+        <AnglerLinkModal
+          team={linkTeam}
+          tournamentId={currentTournament.id}
+          onClose={() => setLinkTeam(null)}
+        />
       )}
     </div>
   )

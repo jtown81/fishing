@@ -6,6 +6,7 @@ import {
   LineChart,
   Monitor,
   Settings,
+  User,
   Users,
   Weight,
   Zap,
@@ -13,16 +14,18 @@ import {
 } from 'lucide-react'
 import { useTournamentStore } from '@modules/tournaments/tournament-store'
 
+type AppView = 'dashboard' | 'statistics' | 'calcutta' | 'scoreboard' | 'reports' | 'setup' | 'teams' | 'weigh-in' | 'import-export' | 'settings' | 'anglers' | 'angler-detail'
+
 interface SidebarProps {
-  currentView: 'dashboard' | 'statistics' | 'calcutta' | 'scoreboard' | 'reports' | 'setup' | 'teams' | 'weigh-in' | 'import-export' | 'settings'
-  setCurrentView: (view: 'dashboard' | 'statistics' | 'calcutta' | 'scoreboard' | 'reports' | 'setup' | 'teams' | 'weigh-in' | 'import-export' | 'settings') => void
+  currentView: AppView
+  setCurrentView: (view: AppView) => void
   open: boolean
   setOpen: (open: boolean) => void
 }
 
 interface NavItem {
   label: string
-  view: 'dashboard' | 'statistics' | 'calcutta' | 'scoreboard' | 'reports' | 'setup' | 'teams' | 'weigh-in' | 'import-export' | 'settings'
+  view: AppView
   icon: React.ReactNode
   requiresTournament?: boolean
 }
@@ -76,6 +79,11 @@ const navItems: NavItem[] = [
     requiresTournament: true
   },
   {
+    label: 'Anglers',
+    view: 'anglers',
+    icon: <User size={20} />
+  },
+  {
     label: 'Import / Export',
     view: 'import-export',
     icon: <Download size={20} />
@@ -95,7 +103,7 @@ export default function Sidebar({
 }: SidebarProps) {
   const currentTournament = useTournamentStore((s) => s.currentTournament)
 
-  const handleNavClick = (view: typeof currentView) => {
+  const handleNavClick = (view: AppView) => {
     setCurrentView(view)
     setOpen(false)
   }
@@ -136,7 +144,9 @@ export default function Sidebar({
             {navItems.map((item) => {
               const isDisabled =
                 item.requiresTournament && !currentTournament
-              const isActive = currentView === item.view
+              const isActive =
+                currentView === item.view ||
+                (item.view === 'anglers' && currentView === 'angler-detail')
 
               return (
                 <button

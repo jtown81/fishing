@@ -5,6 +5,7 @@
 import { create } from 'zustand'
 import { db } from '@db/database'
 import type { WeighIn } from '@models/tournament'
+import { enqueueMutation } from '@modules/sync/sync-engine'
 
 interface WeighInStore {
   // State
@@ -16,6 +17,7 @@ interface WeighInStore {
   addWeighIn: (weighIn: Omit<WeighIn, 'id' | 'createdAt' | 'updatedAt'>) => Promise<WeighIn>
   updateWeighIn: (weighIn: WeighIn) => Promise<void>
   deleteWeighIn: (id: string) => Promise<void>
+  upsertWeighIn: (weighIn: WeighIn) => void
   getTeamWeighIns: (teamId: string, day?: 1 | 2) => WeighIn[]
 }
 
@@ -51,6 +53,14 @@ export const useWeighInStore = create<WeighInStore>((set, get) => ({
       weighIns: [...state.weighIns, newWeighIn]
     }))
 
+    enqueueMutation({
+      entityType: 'weighIn',
+      entityId: newWeighIn.id,
+      action: 'upsert',
+      payload: newWeighIn,
+      timestamp: new Date()
+    }).catch(() => {})
+
     return newWeighIn
   },
 
@@ -66,6 +76,14 @@ export const useWeighInStore = create<WeighInStore>((set, get) => ({
         w.id === weighIn.id ? updated : w
       )
     }))
+
+    enqueueMutation({
+      entityType: 'weighIn',
+      entityId: updated.id,
+      action: 'upsert',
+      payload: updated,
+      timestamp: new Date()
+    }).catch(() => {})
   },
 
   deleteWeighIn: async (id) => {
@@ -73,6 +91,25 @@ export const useWeighInStore = create<WeighInStore>((set, get) => ({
     set((state) => ({
       weighIns: state.weighIns.filter(w => w.id !== id)
     }))
+
+    enqueueMutation({
+      entityType: 'weighIn',
+      entityId: id,
+      action: 'delete',
+      payload: {},
+      timestamp: new Date()
+    }).catch(() => {})
+  },
+
+  // Called by realtime subscription to merge remote weigh-in into local state
+  upsertWeighIn: (weighIn) => {
+    set((state) => {
+      const exists = state.weighIns.some(w => w.id === weighIn.id)
+      if (exists) {
+        return { weighIns: state.weighIns.map(w => w.id === weighIn.id ? weighIn : w) }
+      }
+      return { weighIns: [...state.weighIns, weighIn] }
+    })
   },
 
   getTeamWeighIns: (teamId, day) => {

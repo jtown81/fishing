@@ -5,6 +5,9 @@
 import { create } from 'zustand'
 import { db } from '@db/database'
 import type { Tournament } from '@models/tournament'
+import { enqueueMutation } from '@modules/sync/sync-engine'
+import { useSubscriptionStore } from '@modules/subscription'
+import { useRoleStore } from '@modules/roles'
 
 interface TournamentStore {
   // State
@@ -38,6 +41,13 @@ export const useTournamentStore = create<TournamentStore>((set) => ({
   },
 
   createTournament: async (tournament) => {
+    // Enforce Free tier limit: max 1 tournament
+    const { tier } = useSubscriptionStore.getState()
+    const existingCount = await db.tournaments.count()
+    if (tier === 'free' && existingCount >= 1) {
+      throw new Error('FREE_TIER_LIMIT')
+    }
+
     const now = new Date()
     const newTournament: Tournament = {
       id: `tournament-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
@@ -50,6 +60,14 @@ export const useTournamentStore = create<TournamentStore>((set) => ({
     set((state) => ({
       tournaments: [...state.tournaments, newTournament]
     }))
+
+    enqueueMutation({
+      entityType: 'tournament',
+      entityId: newTournament.id,
+      action: 'upsert',
+      payload: newTournament,
+      timestamp: new Date()
+    }).catch(() => {})
 
     return newTournament
   },
@@ -70,14 +88,36 @@ export const useTournamentStore = create<TournamentStore>((set) => ({
           ? updated
           : state.currentTournament
     }))
+
+    enqueueMutation({
+      entityType: 'tournament',
+      entityId: updated.id,
+      action: 'upsert',
+      payload: updated,
+      timestamp: new Date()
+    }).catch(() => {})
   },
 
   deleteTournament: async (id) => {
+    // Only the owner (or local-only users with no role set) can delete
+    const { currentRole } = useRoleStore.getState()
+    if (currentRole !== null && currentRole !== 'owner') {
+      throw new Error('Only the tournament owner can delete it')
+    }
+
     await db.tournaments.delete(id)
     set((state) => ({
       tournaments: state.tournaments.filter(t => t.id !== id),
       currentTournament:
         state.currentTournament?.id === id ? null : state.currentTournament
     }))
+
+    enqueueMutation({
+      entityType: 'tournament',
+      entityId: id,
+      action: 'delete',
+      payload: {},
+      timestamp: new Date()
+    }).catch(() => {})
   }
 }))

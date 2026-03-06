@@ -538,46 +538,74 @@ TREND DATA (multi-year)
 ### Phase 4: Cloud Sync & Multi-Device (Weeks 11-16)
 > Enable cloud backup and multi-device access
 
-**Deliverables:**
-- [ ] Supabase backend: PostgreSQL database, auth, realtime
-- [ ] User registration and authentication
-- [ ] Offline-first sync engine: Local-first with background cloud sync
-- [ ] Conflict resolution for concurrent edits
-- [ ] Multi-device weigh-in stations syncing to single tournament
-- [ ] Spectator mode: Public read-only link to live standings
-- [ ] QR code generation for spectator access
-- [ ] Data owned by user -- cloud is optional backup
+**Status: ✅ COMPLETE**
+
+**Delivered:**
+- [x] Supabase backend: PostgreSQL database, auth, realtime
+- [x] User registration and authentication
+- [x] Offline-first sync engine: Local-first with background cloud sync
+- [x] Conflict resolution for concurrent edits (last-write-wins by updatedAt)
+- [x] Multi-device weigh-in stations syncing to single tournament
+- [x] Spectator mode: Public read-only link to live standings (`?spectator=<slug>`)
+- [x] Data owned by user -- cloud is optional backup (app fully functional without Supabase)
 
 ### Phase 5: Subscription & Multi-Tenant (Weeks 17-24)
 > SaaS product launch
 
-**Deliverables:**
-- [ ] Subscription tiers:
-  - **Free**: 1 active tournament, local only, basic stats
-  - **Pro** ($9.99/mo): Unlimited tournaments, cloud sync, historical data, all reports
-  - **Organization** ($29.99/mo): Multi-user, role-based access, custom branding, API access
-- [ ] Stripe payment integration
-- [ ] Customer data storage: Encrypted at rest, tenant-isolated
+**Status: ✅ CORE COMPLETE** (billing integration delivered; advanced multi-tenant features deferred to Phase 6)
+
+**Delivered:**
+- [x] Subscription tiers: Free (1 tournament, local-only) / Pro ($9.99/mo) / Org ($29.99/mo)
+- [x] Stripe Checkout integration (redirect flow via Supabase Edge Function)
+- [x] Stripe Billing Portal (plan changes, cancellations)
+- [x] Stripe webhook handler (checkout.session.completed, subscription.updated/deleted, invoice.payment_failed)
+- [x] `user_subscriptions` table in Supabase with RLS
+- [x] `subscription-service.ts` + `subscription-store.ts` (mirrors auth pattern; no-op when Supabase unconfigured)
+- [x] Free tier enforcement: `createTournament` throws `FREE_TIER_LIMIT` when count ≥ 1
+- [x] UpgradePrompt component (modal + inline) with Pro feature list
+- [x] PricingCards component (3-column Free/Pro/Org grid)
+- [x] SubscriptionBadge component (pill: Free/Pro/Org)
+- [x] SettingsView: badge, renewal date, "Manage Billing" / "Upgrade Plan" buttons, inline PricingCards
+- [x] SettingsView Cloud Sync section gated: shows UpgradePrompt when tier=Free
+- [x] App.tsx: subscription init, user change effects, `?billing=success` redirect handler
+
+**Deferred to Phase 6:**
 - [ ] Admin dashboard for tournament organizers
 - [ ] White-label branding: Custom logos, colors, domain
-- [ ] API for third-party integrations (live scores to social media, etc.)
+- [ ] REST/GraphQL API for third-party integrations
 - [ ] Capacitor wrapper: Native iOS and Android apps in app stores
 
-### Phase 6: Advanced Features (Ongoing)
-> Competitive differentiation
+### Phase 6: Native Apps, Admin & Advanced Features (Ongoing)
+> Competitive differentiation + Phase 5 deferred items
 
-**Deliverables:**
-- [ ] Digital signature capture for weight tickets
-- [ ] Photo capture: Attach fish photos to weigh-in records
-- [ ] GPS integration: Log fishing areas (anonymized for reports)
-- [ ] Angler profiles: Track individual performance across tournaments
-- [ ] Species-specific tracking: Support multi-species tournaments
+**Deliverables (prioritized order):**
+
+**6a — Native App (Capacitor)**
+- [ ] Capacitor wrapper: native iOS and Android shells around the PWA
+- [ ] App Store / Play Store deployment pipeline
+- [ ] Native push notifications (standings changes, weigh-in deadlines)
+- [ ] Camera access for fish photo capture
+- [ ] Native share sheet for spectator links
+
+**6b — Admin & Multi-Tenant**
+- [ ] Admin dashboard: manage tournaments across multiple Org-tier users
+- [ ] Role-based access: owner / weigh-in operator / read-only
+- [ ] White-label branding: custom logo, colors, subdomain per organization
+- [ ] REST API for third-party integrations (live scores to social media, etc.)
+
+**6c — Angler & Social Features**
+- [ ] Angler profiles: track individual performance across tournaments
+- [ ] Digital signature capture on weight tickets (tablet-optimized)
+- [ ] Photo capture: attach fish photos to weigh-in records
+- [ ] Social sharing: post results to Facebook, Instagram
+- [ ] GPS integration: log fishing areas (anonymized for reports)
+
+**6d — Intelligence & Analytics**
+- [ ] AI-powered predictions: estimated final standings from Day 1 results
+- [ ] Weather integration: correlate catch data with conditions
+- [ ] Sponsor management: logos, thank-you reports
+- [ ] Species-specific tracking: multi-species tournament support
 - [ ] Automated bracket/elimination tournament formats
-- [ ] Social sharing: Post results to Facebook, Instagram
-- [ ] Push notifications: Standings changes, weigh-in reminders
-- [ ] AI-powered predictions: Estimated final standings based on Day 1
-- [ ] Weather integration: Correlate catch data with conditions
-- [ ] Sponsor management: Track sponsors, display logos, generate thank-you reports
 
 ---
 

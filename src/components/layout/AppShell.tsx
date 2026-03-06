@@ -8,16 +8,23 @@ import { ScoreboardDisplay } from '@components/scoreboard'
 import { ParksReportGenerator } from '@components/reports'
 import { PrintManager } from '@components/print'
 import { ImportExportManager } from '@components/import-export'
+import SettingsView from '@components/settings/SettingsView'
 import TournamentSetup from '@components/forms/TournamentSetup'
 import TeamList from '@components/teams/TeamList'
 import WeighInForm from '@components/weigh-in/WeighInForm'
+import AnglerList from '@components/anglers/AnglerList'
+import AnglerProfile from '@components/anglers/AnglerProfile'
+
+type AppView = 'dashboard' | 'statistics' | 'calcutta' | 'scoreboard' | 'reports' | 'setup' | 'teams' | 'weigh-in' | 'import-export' | 'settings' | 'anglers' | 'angler-detail'
 
 interface AppShellProps {
-  currentView: 'dashboard' | 'statistics' | 'calcutta' | 'scoreboard' | 'reports' | 'setup' | 'teams' | 'weigh-in' | 'import-export' | 'settings'
-  setCurrentView: (view: 'dashboard' | 'statistics' | 'calcutta' | 'scoreboard' | 'reports' | 'setup' | 'teams' | 'weigh-in' | 'import-export' | 'settings') => void
+  currentView: AppView
+  setCurrentView: (view: AppView) => void
+  selectedAnglerId: string | null
+  setSelectedAnglerId: (id: string | null) => void
 }
 
-export default function AppShell({ currentView, setCurrentView }: AppShellProps) {
+export default function AppShell({ currentView, setCurrentView, selectedAnglerId, setSelectedAnglerId }: AppShellProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
   // Scoreboard is fullscreen - render without sidebar/header
@@ -44,7 +51,23 @@ export default function AppShell({ currentView, setCurrentView }: AppShellProps)
       case 'import-export':
         return <ImportExportManager />
       case 'settings':
-        return <div className="p-6 text-gray-600">Settings coming soon</div>
+        return <SettingsView />
+      case 'anglers':
+        return (
+          <AnglerList
+            onSelectAngler={(id) => {
+              setSelectedAnglerId(id)
+              setCurrentView('angler-detail')
+            }}
+          />
+        )
+      case 'angler-detail':
+        return selectedAnglerId ? (
+          <AnglerProfile
+            anglerId={selectedAnglerId}
+            onBack={() => setCurrentView('anglers')}
+          />
+        ) : <AnglerList onSelectAngler={(id) => { setSelectedAnglerId(id); setCurrentView('angler-detail') }} />
       default:
         return <Dashboard />
     }

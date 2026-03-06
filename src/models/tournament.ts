@@ -18,6 +18,7 @@ export interface Tournament {
   endDate: Date
   logoId?: string // Reference to Logo in IndexedDB
   rules: TournamentRules
+  publicSlug?: string // Set when cloud sync is enabled; used for spectator links
   createdAt: Date
   updatedAt: Date
 }
@@ -49,9 +50,30 @@ export interface WeighIn {
   bigFishWeight?: number // Optional big fish weight for this day
   receivedBy: string
   issuedBy: string
+  photoDataUrl?: string // base64 JPEG stored in IndexedDB (Phase 6a)
+  receivedBySignature?: string // base64 canvas signature (Phase 6c)
   timestamp: Date
   createdAt: Date
   updatedAt: Date
+}
+
+export interface Angler {
+  id: string
+  firstName: string
+  lastName: string
+  email?: string
+  notes?: string
+  createdAt: Date
+  updatedAt: Date
+}
+
+export interface AnglerAppearance {
+  id: string
+  anglerId: string
+  tournamentId: string
+  teamId: string
+  teamNumber: number
+  createdAt: Date
 }
 
 export interface TeamStanding {

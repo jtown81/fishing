@@ -15,6 +15,10 @@ import { useEffect, useState, useCallback } from 'react'
 import { useStandings } from '@hooks/useStandings'
 import { useTournamentStats } from '@modules/stats'
 import { useTournamentStore } from '@modules/tournaments/tournament-store'
+import { useAuthStore } from '@modules/auth'
+import { generatePublicSlug, setPublicSlug } from '@modules/sync'
+import { isCloudEnabled } from '@lib/supabase'
+import { shareUrl } from '@lib/share'
 import { formatWeight, formatNumber } from '@utils/formatting'
 import {
   Trophy,
@@ -23,7 +27,9 @@ import {
   TrendingDown,
   Pause,
   Play,
-  RotateCcw
+  RotateCcw,
+  Share2,
+  Check
 } from 'lucide-react'
 
 interface ScoreboardState {
@@ -34,8 +40,10 @@ interface ScoreboardState {
 
 export default function ScoreboardDisplay() {
   const currentTournament = useTournamentStore((s) => s.currentTournament)
+  const updateTournament = useTournamentStore((s) => s.updateTournament)
   const standings = useStandings()
   const { coreStats } = useTournamentStats()
+  const { user } = useAuthStore()
 
   const [state, setState] = useState<ScoreboardState>({
     autoRefresh: true,
@@ -44,6 +52,8 @@ export default function ScoreboardDisplay() {
   })
 
   const [refreshCount, setRefreshCount] = useState(0)
+  const [shareCopied, setShareCopied] = useState(false)
+  const [shareError, setShareError] = useState<string | null>(null)
 
   // Auto-refresh effect
   useEffect(() => {
@@ -55,6 +65,34 @@ export default function ScoreboardDisplay() {
 
     return () => clearInterval(interval)
   }, [state.autoRefresh, state.refreshInterval])
+
+  const handleShare = useCallback(async () => {
+    if (!currentTournament || !user) return
+    setShareError(null)
+
+    // Use existing slug or generate a new one
+    let slug = currentTournament.publicSlug
+    if (!slug) {
+      slug = generatePublicSlug(currentTournament.year, currentTournament.name)
+      const { error } = await setPublicSlug(currentTournament.id, slug)
+      if (error) {
+        setShareError(error)
+        return
+      }
+      // Update local tournament record with the new slug
+      await updateTournament({ ...currentTournament, publicSlug: slug })
+    }
+
+    const url = `${window.location.origin}${window.location.pathname}?spectator=${slug}`
+    try {
+      await shareUrl(currentTournament.name, url)
+      setShareCopied(true)
+      setTimeout(() => setShareCopied(false), 3000)
+    } catch {
+      setShareError('Could not share URL')
+      console.info('Spectator URL:', url)
+    }
+  }, [currentTournament, user, updateTournament])
 
   // Handle fullscreen
   const toggleFullscreen = useCallback(() => {
@@ -113,6 +151,21 @@ export default function ScoreboardDisplay() {
           </div>
 
           <div className="flex gap-2">
+            {isCloudEnabled && user && (
+              <button
+                onClick={handleShare}
+                title={shareCopied ? 'Link copied!' : 'Share spectator link'}
+                className={`flex items-center gap-1.5 px-3 py-2 rounded text-sm font-medium transition ${
+                  shareCopied
+                    ? 'bg-green-700 text-white'
+                    : 'bg-slate-800 hover:bg-slate-700 text-gray-200'
+                }`}
+              >
+                {shareCopied ? <Check size={16} /> : <Share2 size={16} />}
+                {shareCopied ? 'Copied!' : 'Share'}
+              </button>
+            )}
+
             <button
               onClick={() => setState(s => ({ ...s, autoRefresh: !s.autoRefresh }))}
               title={state.autoRefresh ? 'Pause auto-refresh' : 'Resume auto-refresh'}
@@ -137,6 +190,10 @@ export default function ScoreboardDisplay() {
               <RotateCcw size={20} />
             </button>
           </div>
+
+          {shareError && (
+            <div className="text-xs text-red-400">{shareError}</div>
+          )}
 
           <div className="text-xs text-gray-500">
             Auto-refresh: {state.autoRefresh ? `${state.refreshInterval}s` : 'OFF'}

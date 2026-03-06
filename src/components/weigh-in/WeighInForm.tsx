@@ -3,6 +3,8 @@ import { useTournamentStore } from '@modules/tournaments/tournament-store'
 import { useTeamStore } from '@modules/teams/team-store'
 import { useWeighInStore } from '@modules/weigh-ins/weigh-in-store'
 import { calculateDayTotal } from '@utils/calculations'
+import { capturePhoto } from '@lib/camera'
+import { Camera, X } from 'lucide-react'
 
 export default function WeighInForm() {
   const currentTournament = useTournamentStore((s) => s.currentTournament)
@@ -19,6 +21,8 @@ export default function WeighInForm() {
     receivedBy: '',
     issuedBy: ''
   })
+  const [photoDataUrl, setPhotoDataUrl] = useState<string | null>(null)
+  const [isCapturing, setIsCapturing] = useState(false)
 
   const releaseBonus = currentTournament?.rules.releaseBonus || 0.2
 
@@ -35,6 +39,16 @@ export default function WeighInForm() {
   ) => {
     const { name, value } = e.target
     setFormData((prev) => ({ ...prev, [name]: value }))
+  }
+
+  const handleAddPhoto = async () => {
+    setIsCapturing(true)
+    try {
+      const dataUrl = await capturePhoto()
+      if (dataUrl) setPhotoDataUrl(dataUrl)
+    } finally {
+      setIsCapturing(false)
+    }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -60,6 +74,7 @@ export default function WeighInForm() {
           : undefined,
         receivedBy: formData.receivedBy,
         issuedBy: formData.issuedBy,
+        photoDataUrl: photoDataUrl ?? undefined,
         timestamp: new Date()
       })
 
@@ -74,6 +89,7 @@ export default function WeighInForm() {
         receivedBy: '',
         issuedBy: ''
       })
+      setPhotoDataUrl(null)
 
       alert('Weigh-in recorded successfully')
     } catch (error) {
@@ -241,6 +257,36 @@ export default function WeighInForm() {
             </p>
           </div>
         )}
+
+        {/* Photo capture */}
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={handleAddPhoto}
+            disabled={isCapturing}
+            className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-50 transition-colors"
+          >
+            <Camera size={16} />
+            {isCapturing ? 'Capturing…' : photoDataUrl ? 'Replace Photo' : 'Add Photo'}
+          </button>
+
+          {photoDataUrl && (
+            <div className="relative inline-block">
+              <img
+                src={photoDataUrl}
+                alt="Weigh-in photo"
+                className="w-20 h-20 object-cover rounded-lg border border-gray-200"
+              />
+              <button
+                type="button"
+                onClick={() => setPhotoDataUrl(null)}
+                className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-0.5 hover:bg-red-600"
+              >
+                <X size={12} />
+              </button>
+            </div>
+          )}
+        </div>
 
         <button
           type="submit"
