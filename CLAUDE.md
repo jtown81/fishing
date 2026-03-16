@@ -2,6 +2,40 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+---
+
+## ⚠️ Workspace Context
+
+This project is part of a **multi-project workspace** rooted at `/home/jpl/app-dev/`. The workspace contains several independent projects:
+
+| Project | Directory | Git Repo | Status |
+|---------|-----------|----------|--------|
+| **Retirement Planner** | `retire-app/` | workspace root `.git/` | Primary focus |
+| **Fishing Tournament** | `fishing/` | `fishing/.git/` (separate) | This project |
+| **3Peaks Templates** | `3peaks/` | `3peaks/.git/` (separate) | Independent |
+| **Cabin Tracker** | `cabin/` | `cabin/.git/` (separate) | Independent |
+| **Brand Assets** | `brand/` | `brand/.git/` (separate) | Independent |
+
+**Scope Restriction:** You are working on the **Fishing Tournament** project. This project has its own `.git/` repository, `package.json`, and development environment. **Never modify files outside this directory or cross project boundaries.**
+
+### Commands Run From This Directory
+
+All development commands for this project must run from `/home/jpl/app-dev/fishing/`:
+
+```bash
+cd /home/jpl/app-dev/fishing  # Always navigate here first
+npm install                   # Then run commands from this directory
+npm run dev
+npm run build
+npm run test
+git add .
+git commit -m "..."          # Commits go to fishing/.git/, not workspace root
+```
+
+**Important:** Do not run commands from the workspace root `/home/jpl/app-dev/`. Each project is independent.
+
+---
+
 ## Project Overview
 
 Fishing tournament management application replacing an Excel/VBA-based system. The XLSM spreadsheet (`Fishing Tourney 2024- ChatGPT Upload.xlsm`) was used as the starting reference for the data model, formulas, and workflows. It will become obsolete as the application is built -- the app is the source of truth, not the spreadsheet. See `roadmap.md` for full architecture, data model, phased delivery plan, and technology decisions.

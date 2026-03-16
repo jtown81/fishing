@@ -4,11 +4,13 @@ import { useWeighInStore } from '@modules/weigh-ins/weigh-in-store'
 import { computeTournamentStats, getBigFishLeader } from '@utils/calculations'
 import { formatWeight, formatNumber } from '@utils/formatting'
 import { Fish, Trophy, Users, Zap } from 'lucide-react'
+import { useThemeStore } from '@store/theme-store'
 
 export default function SummaryCards() {
   const currentTournament = useTournamentStore((s) => s.currentTournament)
   const teams = useTeamStore((s) => s.teams)
   const weighIns = useWeighInStore((s) => s.weighIns)
+  const { currentTheme } = useThemeStore()
 
   const stats = currentTournament && weighIns.length > 0
     ? computeTournamentStats(weighIns, teams)
@@ -21,25 +23,25 @@ export default function SummaryCards() {
       label: 'Total Teams',
       value: formatNumber(teams.length),
       icon: Users,
-      color: 'bg-blue-50 text-blue-600'
+      iconEmoji: '👥'
     },
     {
       label: 'Total Fish Caught',
       value: formatNumber(stats?.totalFishCaught || 0),
       icon: Fish,
-      color: 'bg-green-50 text-green-600'
+      iconEmoji: '🎣'
     },
     {
       label: 'Total Weight',
       value: formatWeight(stats?.totalWeightCaught || 0),
       icon: Zap,
-      color: 'bg-purple-50 text-purple-600'
+      iconEmoji: '⚡'
     },
     {
       label: 'Big Fish',
       value: bigFishLeader ? formatWeight(bigFishLeader.bigFishWeight || 0) : '—',
       icon: Trophy,
-      color: 'bg-amber-50 text-amber-600'
+      iconEmoji: '🏆'
     }
   ]
 
@@ -48,14 +50,22 @@ export default function SummaryCards() {
       {cards.map((card) => (
         <div
           key={card.label}
-          className={`${card.color} rounded-lg p-6 border border-current border-opacity-20`}
+          className="rounded-lg p-6 border-2 transition-all duration-200 hover:shadow-lg"
+          style={{
+            backgroundColor: currentTheme.colors.background,
+            borderColor: currentTheme.colors.border,
+          }}
         >
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">{card.label}</p>
-              <p className="text-2xl font-bold text-gray-900 mt-1">{card.value}</p>
+              <p className="text-sm font-medium" style={{ color: currentTheme.colors.text }}>{card.label}</p>
+              <p className="text-2xl font-bold mt-1" style={{ color: currentTheme.colors.primary }}>{card.value}</p>
             </div>
-            <card.icon size={32} className="opacity-50" />
+            <div
+              className="text-4xl opacity-60"
+            >
+              {card.iconEmoji}
+            </div>
           </div>
         </div>
       ))}

@@ -15,6 +15,7 @@ import {
 } from 'lucide-react'
 import { useTournamentStore } from '@modules/tournaments/tournament-store'
 import { useSubscriptionStore } from '@modules/subscription'
+import { useThemeStore } from '@store/theme-store'
 
 type AppView = 'dashboard' | 'statistics' | 'calcutta' | 'scoreboard' | 'reports' | 'setup' | 'teams' | 'weigh-in' | 'import-export' | 'settings' | 'anglers' | 'angler-detail' | 'admin'
 
@@ -40,6 +41,7 @@ export default function Sidebar({
 }: SidebarProps) {
   const currentTournament = useTournamentStore((s) => s.currentTournament)
   const { tier } = useSubscriptionStore()
+  const { currentTheme } = useThemeStore()
 
   const navItems: NavItem[] = [
     {
@@ -129,14 +131,22 @@ export default function Sidebar({
 
       {/* Sidebar */}
       <aside
-        className={`fixed inset-y-0 left-0 w-64 bg-gray-900 text-white transform transition-transform duration-300 ease-in-out z-40 md:relative md:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 w-64 text-white transform transition-transform duration-300 ease-in-out z-40 md:relative md:translate-x-0 ${
           open ? 'translate-x-0' : '-translate-x-full'
         }`}
+        style={{
+          backgroundColor: currentTheme.colors.primary,
+          backgroundImage: `linear-gradient(180deg, ${currentTheme.colors.primary}, ${currentTheme.colors.secondary})`,
+        }}
       >
         {/* Close button for mobile */}
         <button
           onClick={() => setOpen(false)}
-          className="absolute top-4 right-4 md:hidden p-2 hover:bg-gray-800 rounded-lg"
+          className="absolute top-4 right-4 md:hidden p-2 rounded-lg transition-all"
+          style={{
+            backgroundColor: 'rgba(255, 255, 255, 0.1)',
+            color: 'white',
+          }}
         >
           <X size={20} />
         </button>
@@ -144,8 +154,17 @@ export default function Sidebar({
         {/* Sidebar content */}
         <div className="pt-12 md:pt-0 h-full flex flex-col">
           {/* Logo/Title */}
-          <div className="px-6 py-4 border-b border-gray-700">
-            <h2 className="text-lg font-bold">Tourney Manager</h2>
+          <div
+            className="px-6 py-4 border-b"
+            style={{
+              borderColor: `rgba(255, 255, 255, 0.2)`,
+            }}
+          >
+            <h2 className="text-lg font-bold flex items-center gap-2">
+              <span className="text-2xl">{currentTheme.icons.speciesEmoji}</span>
+              <span>Manager</span>
+            </h2>
+            <p className="text-xs opacity-75 mt-1">{currentTheme.tagline}</p>
           </div>
 
           {/* Navigation */}
@@ -162,25 +181,36 @@ export default function Sidebar({
                   key={item.view}
                   onClick={() => !isDisabled && handleNavClick(item.view)}
                   disabled={isDisabled}
-                  className={`w-full flex items-center gap-3 px-4 py-2 rounded-lg transition-colors ${
-                    isActive
-                      ? 'bg-blue-600 text-white'
+                  className="w-full flex items-center gap-3 px-4 py-2 rounded-lg transition-all duration-200"
+                  style={{
+                    backgroundColor: isActive
+                      ? `${currentTheme.colors.accent}dd`
                       : isDisabled
-                        ? 'text-gray-500 cursor-not-allowed'
-                        : 'text-gray-300 hover:bg-gray-800'
-                  }`}
+                        ? 'rgba(0, 0, 0, 0.2)'
+                        : 'rgba(255, 255, 255, 0.1)',
+                    color: isDisabled ? 'rgba(255, 255, 255, 0.5)' : 'white',
+                    cursor: isDisabled ? 'not-allowed' : 'pointer',
+                    transform: isActive ? 'translateX(4px)' : 'translateX(0)',
+                  }}
                 >
                   {item.icon}
-                  <span>{item.label}</span>
+                  <span className="text-sm font-medium">{item.label}</span>
                 </button>
               )
             })}
           </nav>
 
           {/* Footer */}
-          <div className="px-6 py-4 border-t border-gray-700 text-xs text-gray-400">
+          <div
+            className="px-6 py-4 border-t text-xs"
+            style={{
+              borderColor: `rgba(255, 255, 255, 0.2)`,
+              color: 'rgba(255, 255, 255, 0.7)',
+            }}
+          >
             <p>v0.1.0</p>
             <p className="mt-2">Offline-capable PWA</p>
+            <p className="mt-2 opacity-60">{currentTheme.species}</p>
           </div>
         </div>
       </aside>

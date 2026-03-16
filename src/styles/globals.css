@@ -1,8 +1,11 @@
 @import "tailwindcss";
+@import "./themes.css";
 
 @layer base {
   body {
-    @apply bg-white text-gray-900;
+    background-color: var(--color-background);
+    color: var(--color-text);
+    transition: background-color 300ms ease, color 300ms ease;
   }
 }
 

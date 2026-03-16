@@ -5,6 +5,7 @@ import { useAuthStore } from '@modules/auth'
 import { isCloudEnabled } from '@lib/supabase'
 import { getPendingCount } from '@modules/sync'
 import AuthModal from '@components/auth/AuthModal'
+import ThemeSwitcher from '@components/theme/ThemeSwitcher'
 
 interface HeaderProps {
   onMenuClick: () => void
@@ -55,8 +56,8 @@ export default function Header({ onMenuClick }: HeaderProps) {
   const renderCloudStatus = () => {
     if (!isCloudEnabled) {
       return (
-        <div className="flex items-center gap-2 text-sm text-gray-400" title="Local only — cloud sync not configured">
-          <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+        <div className="flex items-center gap-2 text-sm" style={{ color: 'rgba(255, 255, 255, 0.8)' }} title="Local only — cloud sync not configured">
+          <div className="w-2 h-2 rounded-full" style={{ backgroundColor: '#4ade80' }}></div>
           <span className="hidden sm:inline">Offline Ready</span>
         </div>
       )
@@ -66,19 +67,20 @@ export default function Header({ onMenuClick }: HeaderProps) {
       return (
         <button
           onClick={handleCloudIconClick}
-          className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 transition-colors"
+          className="flex items-center gap-2 text-sm transition-colors p-2 rounded"
+          style={{ color: 'rgba(255, 255, 255, 0.8)', backgroundColor: 'rgba(255, 255, 255, 0.1)' }}
           title="Click to sign in and enable cloud sync"
         >
-          <CloudOff size={18} className="text-gray-400" />
-          <span className="hidden sm:inline">Sign in to sync</span>
+          <CloudOff size={18} />
+          <span className="hidden sm:inline">Sign in</span>
         </button>
       )
     }
 
     if (syncStatus === 'pending') {
       return (
-        <div className="flex items-center gap-2 text-sm text-yellow-600" title="Changes pending sync">
-          <Loader2 size={18} className="animate-spin text-yellow-500" />
+        <div className="flex items-center gap-2 text-sm" style={{ color: 'rgba(255, 255, 255, 0.9)' }} title="Changes pending sync">
+          <Loader2 size={18} className="animate-spin" />
           <span className="hidden sm:inline">Syncing...</span>
         </div>
       )
@@ -86,8 +88,8 @@ export default function Header({ onMenuClick }: HeaderProps) {
 
     if (syncStatus === 'error') {
       return (
-        <div className="flex items-center gap-2 text-sm text-red-600" title="Sync error — changes will retry">
-          <CloudLightning size={18} className="text-red-500" />
+        <div className="flex items-center gap-2 text-sm" style={{ color: 'rgba(255, 200, 200, 1)' }} title="Sync error — changes will retry">
+          <CloudLightning size={18} />
           <span className="hidden sm:inline">Sync error</span>
         </div>
       )
@@ -95,12 +97,13 @@ export default function Header({ onMenuClick }: HeaderProps) {
 
     // synced
     return (
-      <div className="flex items-center gap-2 text-sm text-green-600" title={`Synced as ${user.email}`}>
-        <Cloud size={18} className="text-green-500" />
+      <div className="flex items-center gap-2 text-sm" style={{ color: 'rgba(255, 255, 255, 0.9)' }} title={`Synced as ${user.email}`}>
+        <Cloud size={18} />
         <span className="hidden sm:inline truncate max-w-[140px]">{user.email}</span>
         <button
           onClick={signOut}
-          className="p-1 hover:bg-gray-100 rounded text-gray-400 hover:text-gray-600 transition-colors"
+          className="p-1 rounded transition-colors"
+          style={{ color: 'rgba(255, 255, 255, 0.7)', backgroundColor: 'rgba(255, 255, 255, 0.1)' }}
           title="Sign out"
         >
           <LogOut size={14} />
@@ -111,18 +114,31 @@ export default function Header({ onMenuClick }: HeaderProps) {
 
   return (
     <>
-      <header className="bg-white border-b border-gray-200 px-4 py-4 flex items-center justify-between sticky top-0 z-10">
+      <header
+        className="border-b px-4 py-4 flex items-center justify-between sticky top-0 z-10 transition-all duration-300"
+        style={{
+          background: `linear-gradient(135deg, var(--gradient-from), var(--gradient-to))`,
+          borderColor: 'var(--color-border)',
+        }}
+      >
         <div className="flex items-center gap-4">
           <button
             onClick={onMenuClick}
-            className="md:hidden p-2 hover:bg-gray-100 rounded-lg"
+            className="md:hidden p-2 rounded-lg transition-colors"
+            style={{
+              color: 'var(--color-text)',
+              backgroundColor: 'rgba(255, 255, 255, 0.2)',
+            }}
+            title="Toggle menu"
           >
             <Menu size={20} />
           </button>
           <div>
-            <h1 className="text-xl font-bold text-gray-900">Fishing Tournament Manager</h1>
+            <h1 className="text-2xl font-bold" style={{ color: 'white', textShadow: '0 2px 4px rgba(0,0,0,0.2)' }}>
+              🎣 Fishing Tournament
+            </h1>
             {currentTournament && (
-              <p className="text-sm text-gray-600">
+              <p className="text-sm opacity-90" style={{ color: 'rgba(255, 255, 255, 0.9)' }}>
                 {currentTournament.name} - {currentTournament.year}
               </p>
             )}
@@ -130,7 +146,10 @@ export default function Header({ onMenuClick }: HeaderProps) {
         </div>
 
         <div className="flex items-center gap-4">
-          {renderCloudStatus()}
+          <ThemeSwitcher />
+          <div style={{ color: 'rgba(255, 255, 255, 0.9)' }}>
+            {renderCloudStatus()}
+          </div>
         </div>
       </header>
 
