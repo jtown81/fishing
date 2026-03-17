@@ -1,17 +1,22 @@
 /**
  * Theme Provider Component
  * Applies theme configuration and loads font files
+ * Mounts ambient background layer when appropriate
+ * Manages seasonal theme overlays
  */
 
 import { useEffect } from 'react'
 import { useThemeStore } from '@store/theme-store'
+import { detectSeason } from '@config/seasons'
+import AmbientBackground from './AmbientBackground'
+import '@styles/seasonal.css'
 
 interface ThemeProviderProps {
   children: React.ReactNode
 }
 
 export default function ThemeProvider({ children }: ThemeProviderProps) {
-  const { currentThemeId, currentTheme, loadTheme } = useThemeStore()
+  const { currentThemeId, currentTheme, currentSeasonId, loadTheme } = useThemeStore()
 
   // Load saved theme on mount
   useEffect(() => {
@@ -43,5 +48,16 @@ export default function ThemeProvider({ children }: ThemeProviderProps) {
     }
   }, [currentThemeId, currentTheme])
 
-  return <>{children}</>
+  // Apply season to DOM
+  useEffect(() => {
+    const seasonToApply = currentSeasonId === 'auto' ? detectSeason(new Date()) : currentSeasonId
+    document.documentElement.setAttribute('data-season', seasonToApply)
+  }, [currentSeasonId])
+
+  return (
+    <>
+      <AmbientBackground />
+      {children}
+    </>
+  )
 }

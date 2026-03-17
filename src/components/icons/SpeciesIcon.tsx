@@ -21,7 +21,7 @@ export function WalleyeIcon({ size = 48, animated = false, className = '' }: Spe
       width={size}
       height={size}
       viewBox="0 0 48 48"
-      className={animated ? 'animate-pulse' : className}
+      className={animated ? 'fish-swim-walleye' : className}
       xmlns="http://www.w3.org/2000/svg"
     >
       {/* Body */}
@@ -54,7 +54,7 @@ export function BassIcon({ size = 48, animated = false, className = '' }: Specie
       width={size}
       height={size}
       viewBox="0 0 48 48"
-      className={animated ? 'animate-bounce' : className}
+      className={animated ? 'fish-swim-bass' : className}
       xmlns="http://www.w3.org/2000/svg"
     >
       {/* Body */}
@@ -89,7 +89,7 @@ export function PikeIcon({ size = 48, animated = false, className = '' }: Specie
       width={size}
       height={size}
       viewBox="0 0 48 48"
-      className={animated ? 'animate-pulse' : className}
+      className={animated ? 'fish-swim-pike' : className}
       xmlns="http://www.w3.org/2000/svg"
     >
       {/* Sleek body */}
@@ -125,7 +125,7 @@ export function MuskyIcon({ size = 48, animated = false, className = '' }: Speci
       width={size}
       height={size}
       viewBox="0 0 48 48"
-      className={animated ? 'animate-pulse' : className}
+      className={animated ? 'fish-swim-musky' : className}
       xmlns="http://www.w3.org/2000/svg"
     >
       {/* Large body */}
@@ -161,7 +161,7 @@ export function SalmonIcon({ size = 48, animated = false, className = '' }: Spec
       width={size}
       height={size}
       viewBox="0 0 48 48"
-      className={animated ? 'animate-pulse' : className}
+      className={animated ? 'fish-swim-salmon' : className}
       xmlns="http://www.w3.org/2000/svg"
     >
       {/* Body - curved upward (jumping pose) */}

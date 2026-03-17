@@ -1,4 +1,5 @@
 import { useTournamentStore } from '@modules/tournaments/tournament-store'
+import { AnimatedSpeciesIcon } from '@components/icons/AnimatedSpeciesIcon'
 import StandingsTable from './StandingsTable'
 import SummaryCards from './SummaryCards'
 
@@ -19,9 +20,12 @@ export default function Dashboard() {
 
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold text-gray-900">Tournament Standings</h2>
-        <p className="text-gray-600">{currentTournament.name} - {currentTournament.year}</p>
+      <div className="flex items-center gap-4">
+        <AnimatedSpeciesIcon variant="hero" size={72} />
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900">Tournament Standings</h2>
+          <p className="text-gray-600">{currentTournament.name} - {currentTournament.year}</p>
+        </div>
       </div>
 
       <SummaryCards />

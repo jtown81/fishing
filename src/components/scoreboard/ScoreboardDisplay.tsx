@@ -21,6 +21,7 @@ import { isCloudEnabled } from '@lib/supabase'
 import { shareUrl } from '@lib/share'
 import { formatWeight, formatNumber } from '@utils/formatting'
 import { useThemeStore } from '@store/theme-store'
+import { AnimatedSpeciesIcon } from '@components/icons/AnimatedSpeciesIcon'
 import {
   Trophy,
   Fish,
@@ -137,7 +138,7 @@ export default function ScoreboardDisplay() {
         }}
       >
         <div className="flex items-center gap-3">
-          <span className="text-4xl">{currentTheme.icons.speciesEmoji}</span>
+          <AnimatedSpeciesIcon variant="hero" size={64} />
           <div>
             <h1 className="text-2xl font-bold">{currentTournament.name}</h1>
             <p className="text-sm opacity-80">{currentTheme.tagline} — Live Scoreboard</p>

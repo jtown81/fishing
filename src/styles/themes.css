@@ -333,6 +333,201 @@
   animation: scale-in 500ms ease-out;
 }
 
+/* ===== FISH SWIMMING ANIMATIONS ===== */
+
+/* Walleye: Lateral drift swim with head rotation */
+@keyframes fish-swim-walleye {
+  0% {
+    transform: translateX(0) scaleX(1) rotateZ(0deg);
+  }
+  25% {
+    transform: translateX(8px) scaleX(1) rotateZ(2deg);
+  }
+  50% {
+    transform: translateX(0) scaleX(1) rotateZ(0deg);
+  }
+  75% {
+    transform: translateX(-8px) scaleX(1) rotateZ(-2deg);
+  }
+  100% {
+    transform: translateX(0) scaleX(1) rotateZ(0deg);
+  }
+}
+
+/* Bass: Energetic bouncing with slight vertical movement */
+@keyframes fish-swim-bass {
+  0% {
+    transform: translateY(0) scaleY(1) rotateZ(0deg);
+  }
+  25% {
+    transform: translateY(-6px) scaleY(1.05) rotateZ(1deg);
+  }
+  50% {
+    transform: translateY(0) scaleY(1) rotateZ(0deg);
+  }
+  75% {
+    transform: translateY(-4px) scaleY(1.02) rotateZ(-1deg);
+  }
+  100% {
+    transform: translateY(0) scaleY(1) rotateZ(0deg);
+  }
+}
+
+/* Pike: Sharp darting motion with aggressive angles */
+@keyframes fish-swim-pike {
+  0% {
+    transform: translateX(0) rotateZ(0deg);
+  }
+  25% {
+    transform: translateX(12px) rotateZ(1deg);
+  }
+  50% {
+    transform: translateX(0) rotateZ(0deg);
+  }
+  75% {
+    transform: translateX(-10px) rotateZ(-1.5deg);
+  }
+  100% {
+    transform: translateX(0) rotateZ(0deg);
+  }
+}
+
+/* Musky: Flowing S-curve motion with body waves */
+@keyframes fish-swim-musky {
+  0% {
+    transform: translateX(0) translateY(0) rotateZ(0deg);
+  }
+  25% {
+    transform: translateX(10px) translateY(-4px) rotateZ(1.5deg);
+  }
+  50% {
+    transform: translateX(0) translateY(0) rotateZ(0deg);
+  }
+  75% {
+    transform: translateX(-10px) translateY(4px) rotateZ(-1.5deg);
+  }
+  100% {
+    transform: translateX(0) translateY(0) rotateZ(0deg);
+  }
+}
+
+/* Salmon: Jumping upstream with vertical emphasis */
+@keyframes fish-swim-salmon {
+  0% {
+    transform: translateY(0) scaleX(1) rotateZ(0deg);
+  }
+  25% {
+    transform: translateY(-8px) scaleX(1.02) rotateZ(0deg);
+  }
+  50% {
+    transform: translateY(0) scaleX(1) rotateZ(0deg);
+  }
+  75% {
+    transform: translateY(-5px) scaleX(0.98) rotateZ(0deg);
+  }
+  100% {
+    transform: translateY(0) scaleX(1) rotateZ(0deg);
+  }
+}
+
+/* Large hero variant - slower, more prominent */
+.fish-swim-large {
+  animation-duration: 3s !important;
+  animation-timing-function: ease-in-out !important;
+}
+
+/* Loading spin animation */
+@keyframes fish-loading-spin {
+  0% {
+    transform: rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: rotate(360deg);
+    opacity: 1;
+  }
+}
+
+.fish-loading-spin {
+  animation: fish-loading-spin 2s linear infinite;
+}
+
+/* Celebration bounce animation */
+@keyframes fish-celebrate-bounce {
+  0%,
+  100% {
+    transform: translateY(0) scale(1);
+  }
+  25% {
+    transform: translateY(-12px) scale(1.05);
+  }
+  50% {
+    transform: translateY(0) scale(1);
+  }
+  75% {
+    transform: translateY(-8px) scale(1.03);
+  }
+}
+
+.fish-celebrate-bounce {
+  animation: fish-celebrate-bounce 0.6s ease-in-out;
+}
+
+/* ===== AMBIENT WATER WAVE ANIMATIONS ===== */
+
+/* Wave 1: Slow oscillation */
+@keyframes water-wave-1 {
+  0% {
+    transform: translateX(0);
+  }
+  50% {
+    transform: translateX(-80px);
+  }
+  100% {
+    transform: translateX(0);
+  }
+}
+
+/* Wave 2: Medium speed */
+@keyframes water-wave-2 {
+  0% {
+    transform: translateX(0);
+  }
+  50% {
+    transform: translateX(-120px);
+  }
+  100% {
+    transform: translateX(0);
+  }
+}
+
+/* Wave 3: Faster ripple */
+@keyframes water-wave-3 {
+  0% {
+    transform: translateX(0);
+  }
+  50% {
+    transform: translateX(-60px);
+  }
+  100% {
+    transform: translateX(0);
+  }
+}
+
+.water-wave-1 {
+  animation: water-wave-1 8s ease-in-out infinite;
+}
+
+.water-wave-2 {
+  animation: water-wave-2 5s ease-in-out infinite;
+  animation-delay: 0.5s;
+}
+
+.water-wave-3 {
+  animation: water-wave-3 3s ease-in-out infinite;
+  animation-delay: 1s;
+}
+
 /* ===== MOBILE & RESPONSIVE OPTIMIZATIONS ===== */
 
 /* Reduce animation complexity on mobile devices */

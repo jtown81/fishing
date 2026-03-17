@@ -1,0 +1,226 @@
+/**
+ * Seasonal Themes CSS
+ * Color overlays and filters applied per season
+ */
+
+/* ===== SPRING THEME OVERLAY ===== */
+[data-season='spring'] {
+  --season-tint: rgba(0, 128, 0, 0.04);
+  --season-accent: #22c55e;
+  --season-filter: hue-rotate(15deg) saturate(1.1);
+}
+
+/* Spring: Add green tint to backgrounds */
+[data-season='spring'] body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: var(--season-tint);
+  pointer-events: none;
+  z-index: -2;
+}
+
+/* ===== SUMMER THEME OVERLAY ===== */
+[data-season='summer'] {
+  --season-tint: rgba(255, 200, 0, 0.04);
+  --season-accent: #fbbf24;
+  --season-filter: saturate(1.2);
+}
+
+/* Summer: Add warm tint */
+[data-season='summer'] body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: var(--season-tint);
+  pointer-events: none;
+  z-index: -2;
+}
+
+/* ===== FALL THEME OVERLAY ===== */
+[data-season='fall'] {
+  --season-tint: rgba(180, 90, 0, 0.06);
+  --season-accent: #d97706;
+  --season-filter: sepia(0.15) saturate(0.95);
+}
+
+/* Fall: Add warm autumn tint */
+[data-season='fall'] body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: var(--season-tint);
+  pointer-events: none;
+  z-index: -2;
+}
+
+/* ===== WINTER THEME OVERLAY ===== */
+[data-season='winter'] {
+  --season-tint: rgba(100, 140, 200, 0.06);
+  --season-accent: #60a5fa;
+  --season-filter: hue-rotate(-20deg) saturate(0.9);
+}
+
+/* Winter: Add cool blue tint */
+[data-season='winter'] body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: var(--season-tint);
+  pointer-events: none;
+  z-index: -2;
+}
+
+/* ===== AUTO SEASON (NO OVERLAY) ===== */
+[data-season='auto'] {
+  --season-tint: rgba(0, 0, 0, 0);
+  --season-accent: inherit;
+  --season-filter: none;
+}
+
+/* ===== SEASONAL ICON EFFECTS ===== */
+
+/* Subtle glow effect for season accents */
+[data-season='spring'] [data-theme] {
+  --season-glow: drop-shadow(0 0 4px rgba(34, 197, 94, 0.3));
+}
+
+[data-season='summer'] [data-theme] {
+  --season-glow: drop-shadow(0 0 6px rgba(251, 191, 36, 0.4));
+}
+
+[data-season='fall'] [data-theme] {
+  --season-glow: drop-shadow(0 0 4px rgba(217, 119, 6, 0.35));
+}
+
+[data-season='winter'] [data-theme] {
+  --season-glow: drop-shadow(0 0 5px rgba(96, 165, 250, 0.3));
+}
+
+/* ===== SEASONAL ANIMATIONS ===== */
+
+/* Spring: Fresh energy */
+@keyframes spring-shimmer {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.95;
+  }
+}
+
+[data-season='spring'] .seasonal-accent {
+  animation: spring-shimmer 2s ease-in-out infinite;
+}
+
+/* Summer: Warm brightness */
+@keyframes summer-glow {
+  0%, 100% {
+    filter: brightness(1);
+  }
+  50% {
+    filter: brightness(1.05);
+  }
+}
+
+[data-season='summer'] .seasonal-accent {
+  animation: summer-glow 3s ease-in-out infinite;
+}
+
+/* Fall: Gentle fade */
+@keyframes fall-fade {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.92;
+  }
+}
+
+[data-season='fall'] .seasonal-accent {
+  animation: fall-fade 2.5s ease-in-out infinite;
+}
+
+/* Winter: Cool crystalline */
+@keyframes winter-crystal {
+  0%, 100% {
+    filter: brightness(1);
+    opacity: 1;
+  }
+  50% {
+    filter: brightness(1.1);
+    opacity: 0.98;
+  }
+}
+
+[data-season='winter'] .seasonal-accent {
+  animation: winter-crystal 3s ease-in-out infinite;
+}
+
+/* ===== SEASONAL ACCENT TEXT ===== */
+
+.season-label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  padding: 4px 8px;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+[data-season='spring'] .season-label {
+  background-color: rgba(34, 197, 94, 0.1);
+  color: #15803d;
+  border: 1px solid rgba(34, 197, 94, 0.3);
+}
+
+[data-season='summer'] .season-label {
+  background-color: rgba(251, 191, 36, 0.1);
+  color: #854d0e;
+  border: 1px solid rgba(251, 191, 36, 0.3);
+}
+
+[data-season='fall'] .season-label {
+  background-color: rgba(217, 119, 6, 0.1);
+  color: #7c2d12;
+  border: 1px solid rgba(217, 119, 6, 0.3);
+}
+
+[data-season='winter'] .season-label {
+  background-color: rgba(96, 165, 250, 0.1);
+  color: #1e40af;
+  border: 1px solid rgba(96, 165, 250, 0.3);
+}
+
+/* ===== MOBILE & ACCESSIBILITY ===== */
+
+@media (max-width: 768px) {
+  /* Disable seasonal tints on mobile for performance */
+  [data-season] body::before {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* Disable seasonal animations */
+  [data-season='spring'] .seasonal-accent,
+  [data-season='summer'] .seasonal-accent,
+  [data-season='fall'] .seasonal-accent,
+  [data-season='winter'] .seasonal-accent {
+    animation: none;
+  }
+}

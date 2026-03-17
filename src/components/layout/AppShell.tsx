@@ -15,8 +15,9 @@ import WeighInForm from '@components/weigh-in/WeighInForm'
 import AnglerList from '@components/anglers/AnglerList'
 import AnglerProfile from '@components/anglers/AnglerProfile'
 import AdminDashboard from '@components/admin/AdminDashboard'
+import { HallOfFameView } from '@components/hall-of-fame'
 
-type AppView = 'dashboard' | 'statistics' | 'calcutta' | 'scoreboard' | 'reports' | 'setup' | 'teams' | 'weigh-in' | 'import-export' | 'settings' | 'anglers' | 'angler-detail' | 'admin'
+type AppView = 'dashboard' | 'statistics' | 'calcutta' | 'scoreboard' | 'reports' | 'setup' | 'teams' | 'weigh-in' | 'import-export' | 'settings' | 'anglers' | 'angler-detail' | 'admin' | 'hall-of-fame'
 
 interface AppShellProps {
   currentView: AppView
@@ -55,6 +56,8 @@ export default function AppShell({ currentView, setCurrentView, selectedAnglerId
         return <SettingsView />
       case 'admin':
         return <AdminDashboard />
+      case 'hall-of-fame':
+        return <HallOfFameView />
       case 'anglers':
         return (
           <AnglerList

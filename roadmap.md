@@ -518,7 +518,7 @@ TREND DATA (multi-year)
 - [x] Parks & Wildlife report (CSV export for agency submission)
 - [x] Print suite: Standings, statistics, weight tickets
 
-### Phase 3: CSV Import/Export System
+### Phase 3: CSV Import/Export System (Weeks 11-14)
 > Import/export tournament data as CSV for easy sharing and backup
 
 **Status: ✅ COMPLETE**
@@ -535,7 +535,7 @@ TREND DATA (multi-year)
 
 **Future**: XLSM import is deferred indefinitely. CSV is the standard import format. If users need to migrate from XLSM, they can export from Excel as CSV first.
 
-### Phase 4: Cloud Sync & Multi-Device (Weeks 11-16)
+### Phase 4 Extended: Cloud Sync & Multi-Device (Weeks 15-20)
 > Enable cloud backup and multi-device access
 
 **Status: ✅ COMPLETE**
@@ -549,7 +549,7 @@ TREND DATA (multi-year)
 - [x] Spectator mode: Public read-only link to live standings (`?spectator=<slug>`)
 - [x] Data owned by user -- cloud is optional backup (app fully functional without Supabase)
 
-### Phase 5: Subscription & Multi-Tenant (Weeks 17-24)
+### Phase 5: Subscription & Multi-Tenant (Weeks 21-28)
 > SaaS product launch
 
 **Status: ✅ CORE COMPLETE** (billing integration delivered; advanced multi-tenant features deferred to Phase 6)
@@ -574,6 +574,61 @@ TREND DATA (multi-year)
 - [ ] White-label branding: Custom logos, colors, domain
 - [ ] REST/GraphQL API for third-party integrations
 - [ ] Capacitor wrapper: Native iOS and Android apps in app stores
+
+### Phase 4: Enhanced Immersion & Seasonal Experience (Weeks 25-28)
+> Theme animations, seasonal overlays, hall of fame records, and optional sound effects
+
+**Status: ✅ 4.1, 4.2, 4.3 COMPLETE** (4.4 optional)
+
+**Delivered:**
+
+**4.1 — Animated Species Illustrations** ✅
+- [x] AnimatedSpeciesIcon wrapper component with 4 variants (idle, hero, loading, celebrate)
+- [x] AmbientBackground water layer with animated sine-wave ripples
+- [x] LoadingScreen component with themed spinner
+- [x] Species-specific CSS swim animations (walleye drifts, bass bounces, pike darts, musky flows, salmon jumps)
+- [x] GPU-accelerated animations (transform + opacity only)
+- [x] Respects prefers-reduced-motion accessibility setting
+- [x] Mobile/low-end device optimization
+- [x] Integration: Dashboard, ScoreboardDisplay headers
+
+**4.2 — Seasonal Themes** ✅
+- [x] Season configuration (spring, summer, fall, winter) with color palettes
+- [x] Auto-detection from tournament start date
+- [x] CSS overlay system with season-specific color tints and filters
+  - [x] Spring: +15° hue-rotate, +10% saturation (green tint)
+  - [x] Summer: +20% saturation (warm gold tint)
+  - [x] Fall: sepia(0.15) + saturation decrease (amber tint)
+  - [x] Winter: -20° hue-rotate + saturation decrease (blue tint)
+- [x] Season selector in theme switcher UI
+- [x] localStorage persistence (resettable to "auto")
+- [x] Seasonal greeting messages for each theme × season
+- [x] CSS animations per season (shimmer, glow, fade, crystalline effects)
+
+**4.3 — Hall of Fame & Trophy Showcase** ✅
+- [x] Hall of Fame module with pure functions computing all-time records:
+  - [x] Biggest Fish (across all tournaments)
+  - [x] Best Team Total (day totals with release bonus)
+  - [x] Most Consistent (lowest standard deviation)
+- [x] Tier system: bronze/silver/gold/legendary (percentile-based)
+- [x] AnimatedTrophy component with tier-specific styling and glow effects
+- [x] RecordCard component displaying individual records
+- [x] HallOfFameView full page with category filters and responsive layout
+- [x] useHallOfFame hook for lazy-loading and memoization
+- [x] Navigation integration (Trophy icon in sidebar)
+- [x] Graceful empty states (zero tournaments)
+
+**4.4 — Sound Effects (Optional)** ⏳
+- [ ] useSoundEngine hook with HTML5 audio
+- [ ] Species-specific ambient soundscapes
+- [ ] Interaction SFX (achievement unlocks, weigh-in saves)
+- [ ] SoundSettings UI with volume/preview controls
+- [ ] Opt-in by default, respects autoplay policy
+
+**Deferred items:**
+- [ ] Sound effects (optional; can enhance Phase 3 or defer to Phase 5)
+
+---
 
 ### Phase 6: Native Apps, Admin & Advanced Features
 > Competitive differentiation + Phase 5 deferred items

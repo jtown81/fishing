@@ -265,6 +265,47 @@ export const themeMessages: Record<ThemeId, ThemeMessages> = {
 }
 
 /**
+ * Seasonal Greeting Messages
+ * Short flavor text for each season overlay
+ */
+export type SeasonId = 'spring' | 'summer' | 'fall' | 'winter'
+
+export const seasonalGreetings: Record<SeasonId, string[]> = {
+  spring: [
+    '🌱 Spring awakens the fish and the angler within',
+    '🌸 Fresh season, fresh catches await',
+    '🌿 The water comes alive with spring energy',
+    '🦋 Renewal season brings new tournament spirit',
+  ],
+  summer: [
+    '☀️ Summer brings the heat and the trophy fish',
+    '🌞 Long days ahead for legendary catches',
+    '🌊 Peak season is here—bring your A-game',
+    '🔥 Summer heat fuels competitive fire',
+  ],
+  fall: [
+    '🍂 Autumn feeds the fire of competitive angling',
+    '🎃 Fall colors match our tournament passion',
+    '🌤️ Cooling waters bring aggressive fish',
+    '🍁 Harvest season extends to your catch',
+  ],
+  winter: [
+    '❄️ Winter reveals the deepest secrets of the water',
+    '⛸️ Cold waters challenge the best anglers',
+    '🌨️ Winter mystery calls to the brave',
+    '🧊 Ice-breaker tournament season begins',
+  ],
+}
+
+/**
+ * Get a random seasonal greeting
+ */
+export function getSeasonalGreeting(seasonId: SeasonId): string {
+  const greetings = seasonalGreetings[seasonId]
+  return greetings[Math.floor(Math.random() * greetings.length)]
+}
+
+/**
  * Get a random message from a theme's message category
  */
 export function getThemeMessage(

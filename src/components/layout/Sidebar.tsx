@@ -7,6 +7,7 @@ import {
   LineChart,
   Monitor,
   Settings,
+  Trophy,
   User,
   Users,
   Weight,
@@ -18,7 +19,7 @@ import { useSubscriptionStore } from '@modules/subscription'
 import { useThemeStore } from '@store/theme-store'
 import { useResponsive } from '@hooks/useResponsive'
 
-type AppView = 'dashboard' | 'statistics' | 'calcutta' | 'scoreboard' | 'reports' | 'setup' | 'teams' | 'weigh-in' | 'import-export' | 'settings' | 'anglers' | 'angler-detail' | 'admin'
+type AppView = 'dashboard' | 'statistics' | 'calcutta' | 'scoreboard' | 'reports' | 'setup' | 'teams' | 'weigh-in' | 'import-export' | 'settings' | 'anglers' | 'angler-detail' | 'admin' | 'hall-of-fame'
 
 interface SidebarProps {
   currentView: AppView
@@ -75,6 +76,11 @@ export default function Sidebar({
       view: 'reports',
       icon: <FileText size={20} />,
       requiresTournament: true
+    },
+    {
+      label: 'Hall of Fame',
+      view: 'hall-of-fame',
+      icon: <Trophy size={20} />
     },
     {
       label: 'Tournament Setup',

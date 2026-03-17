@@ -7,6 +7,7 @@ import { useSubscriptionStore } from '@modules/subscription'
 import { flushSyncQueue, subscribeToTournament } from '@modules/sync'
 import AppShell from '@components/layout/AppShell'
 import SpectatorView from '@components/spectator/SpectatorView'
+import LoadingScreen from '@components/layout/LoadingScreen'
 import { initDevSeedTools } from '@utils/dev-seed'
 import { requestPushPermissions, registerPushDevice, onPushReceived } from '@lib/push-notifications'
 import { Capacitor } from '@capacitor/core'
@@ -14,7 +15,7 @@ import { useRoleStore } from '@modules/roles'
 import { useAnglerStore } from '@modules/anglers'
 
 export default function App() {
-  const [view, setView] = useState<'dashboard' | 'statistics' | 'calcutta' | 'scoreboard' | 'reports' | 'setup' | 'teams' | 'weigh-in' | 'import-export' | 'settings' | 'anglers' | 'angler-detail' | 'admin'>('dashboard')
+  const [view, setView] = useState<'dashboard' | 'statistics' | 'calcutta' | 'scoreboard' | 'reports' | 'setup' | 'teams' | 'weigh-in' | 'import-export' | 'settings' | 'anglers' | 'angler-detail' | 'admin' | 'hall-of-fame'>('dashboard')
   const [selectedAnglerId, setSelectedAnglerId] = useState<string | null>(null)
   const [initialized, setInitialized] = useState(false)
 
@@ -155,11 +156,7 @@ export default function App() {
   }
 
   if (!initialized) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-50">
-        <div className="text-lg text-gray-600">Loading...</div>
-      </div>
-    )
+    return <LoadingScreen />
   }
 
   return (
