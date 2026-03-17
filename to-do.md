@@ -190,35 +190,54 @@
   - ✅ Optional animated pulse effect
   - ✅ Emoji support with sparkle indicators
 
-### Phase 3.4: Theme-Specific Features & Messaging (Week 3)
+### Phase 3.4: Theme-Specific Features & Messaging (Week 3) ✅ COMPLETE
 
-#### 3.4.1 Achievement Badges & Trophies
-- [ ] **Create `src/components/achievements/`**
-  - Species-specific trophy designs for:
-    - Largest catch per day
-    - Most consistent performer
-    - Most improved rank
-    - Perfect day (high weight)
-    - Fishing legend (cumulative stats)
-  - Animated badge unlock animations (species-specific effects)
+#### 3.4.1 Achievement Badges & Trophies ✅ COMPLETE
+- [x] **Use existing `src/components/achievements/AchievementBadge.tsx`**
+  - ✅ 4-tier rarity system: bronze, silver, gold, legendary
+  - ✅ Theme-aware border colors and styling
+  - ✅ Optional animated pulse effects
+  - ✅ Emoji support with sparkle indicators
+- [x] **Create `src/hooks/useAchievements.ts`**
+  - ✅ Tracks 5 achievement types:
+    - Big Fish (gold) — Largest catch
+    - Consistency (silver) — Lowest variance
+    - Improvement (silver) — Best Day 2 gain
+    - Participation (gold) — All teams caught fish
+    - Golden Day (legendary) — Avg weight > 10 lbs
 
-#### 3.4.2 Contextual Flavor Text
-- [ ] **Create `src/data/theme-messaging.ts`**
-  - Species-specific congratulatory messages for achievements
-  - Walleye: "Precision strike! Perfect low-light execution."
-  - Bass: "EXPLOSIVE! That's a powerplay bass move!"
-  - Pike: "PREDATORY EXCELLENCE! The water wolf strikes again."
-  - Musky: "LEGENDARY! Your mastery continues..."
-  - Salmon: "EPIC JOURNEY! Your upstream battle pays off!"
-  - Random flavor text on dashboard load, tournament creation, etc.
+#### 3.4.2 Contextual Flavor Text ✅ COMPLETE
+- [x] **Create `src/data/theme-messaging.ts`**
+  - ✅ 200+ species-specific messages across 9 categories
+  - ✅ Walleye: "Precision strike! Perfect low-light execution." + 20 more
+  - ✅ Bass: "EXPLOSIVE! That's a powerplay bass move!" + 20 more
+  - ✅ Pike: "PREDATORY EXCELLENCE! The water wolf strikes again." + 20 more
+  - ✅ Musky: "LEGENDARY! Your mastery continues..." + 20 more
+  - ✅ Salmon: "EPIC JOURNEY! Your upstream battle pays off!" + 20 more
+  - ✅ Message categories: congratulations, newRecord, bigCatch, consistent, improved, teamwork, dashboardLoad, tournamentStart, endOfDay
+  - ✅ Helper functions: getDashboardMessage(), getTournamentStartMessage(), getEndOfDayMessage(), getCongratulationsMessage()
+- [x] **Create `src/components/messages/ThemeMessage.tsx`**
+  - ✅ Toast-style message display with animations
+  - ✅ Auto-close after 5 seconds (configurable)
+  - ✅ Theme-colored borders and styling
+  - ✅ Manual close button (X)
+- [x] **Create `src/components/messages/MessageContainer.tsx`**
+  - ✅ Manages multiple messages simultaneously
+  - ✅ Stacked display in top-right corner
+  - ✅ Auto-remove when closed
+- [x] **Create `src/hooks/useThemeMessage.ts`**
+  - ✅ Hook for showing messages throughout the app
+  - ✅ Specialized methods: showDashboardMessage(), showTournamentStart(), showEndOfDay(), showAchievement()
+  - ✅ Returns messageState for use in MessageContainer
 
-#### 3.4.3 Species-Specific Statistics Labels
-- [ ] **Update `src/modules/stats/`**
-  - Walleye: "Precision Rating" (instead of Avg Weight)
-  - Bass: "Power Score" (explosive scoring metrics)
-  - Pike: "Predator Index" (hunting efficiency)
-  - Musky: "Mastery Index" (difficulty multiplier for stats)
-  - Salmon: "Journey Progress" (upstream battle metaphors)
+#### 3.4.3 Species-Specific Statistics Labels ✅ COMPLETE
+- [x] **Create `src/data/theme-stats-labels.ts`**
+  - ✅ Walleye: "Twilight Strike Avg", "Night Hunt Avg", "Largest Day 1 Strike"
+  - ✅ Bass: "Power Play Avg D1", "Explosive Avg D2", "BIGGEST Strike"
+  - ✅ Pike: "Predator Avg D1", "Strike Avg D2", "Apex Catch"
+  - ✅ Musky: "Mastery Avg D1", "Excellence Avg D2", "Trophy D1/D2"
+  - ✅ Salmon: "Upstream Avg D1", "Summit Avg D2", "Mighty Salmon", "Peak Salmon"
+  - ✅ Helper function: getStatLabel(themeId, statKey)
 
 ### Phase 3.5: Print & Reports Theme Integration (Week 4)
 

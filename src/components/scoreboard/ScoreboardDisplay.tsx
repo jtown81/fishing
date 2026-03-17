@@ -20,6 +20,7 @@ import { generatePublicSlug, setPublicSlug } from '@modules/sync'
 import { isCloudEnabled } from '@lib/supabase'
 import { shareUrl } from '@lib/share'
 import { formatWeight, formatNumber } from '@utils/formatting'
+import { useThemeStore } from '@store/theme-store'
 import {
   Trophy,
   Fish,
@@ -44,6 +45,7 @@ export default function ScoreboardDisplay() {
   const standings = useStandings()
   const { coreStats } = useTournamentStats()
   const { user } = useAuthStore()
+  const { currentTheme } = useThemeStore()
 
   const [state, setState] = useState<ScoreboardState>({
     autoRefresh: true,
@@ -106,10 +108,11 @@ export default function ScoreboardDisplay() {
 
   if (!currentTournament) {
     return (
-      <div className="w-full h-screen bg-slate-900 text-white flex items-center justify-center">
+      <div className="w-full h-screen text-white flex items-center justify-center" style={{ background: `linear-gradient(135deg, ${currentTheme.colors.primary}, ${currentTheme.colors.secondary})` }}>
         <div className="text-center">
+          <p className="text-4xl mb-4">{currentTheme.icons.speciesEmoji}</p>
           <p className="text-2xl font-bold">No Tournament Selected</p>
-          <p className="text-gray-400 mt-2">Please select a tournament to display</p>
+          <p className="mt-2 opacity-80">Please select a tournament to display</p>
         </div>
       </div>
     )
@@ -118,33 +121,48 @@ export default function ScoreboardDisplay() {
   const top10 = standings.slice(0, 10)
 
   return (
-    <div className="w-full h-screen bg-slate-950 text-white flex flex-col overflow-hidden">
+    <div
+      className="w-full h-screen text-white flex flex-col overflow-hidden"
+      style={{
+        backgroundColor: currentTheme.colors.primary,
+        backgroundImage: `linear-gradient(135deg, ${currentTheme.colors.primary}dd, ${currentTheme.colors.secondary}dd)`,
+      }}
+    >
       {/* Controls Bar */}
-      <div className="bg-slate-900 px-6 py-3 flex items-center justify-between border-b border-slate-700">
-        <div>
-          <h1 className="text-xl font-bold">{currentTournament.name}</h1>
-          <p className="text-sm text-gray-400">Live Scoreboard</p>
+      <div
+        className="px-6 py-3 flex items-center justify-between border-b-2"
+        style={{
+          backgroundColor: 'rgba(0, 0, 0, 0.2)',
+          borderColor: currentTheme.colors.accent,
+        }}
+      >
+        <div className="flex items-center gap-3">
+          <span className="text-4xl">{currentTheme.icons.speciesEmoji}</span>
+          <div>
+            <h1 className="text-2xl font-bold">{currentTournament.name}</h1>
+            <p className="text-sm opacity-80">{currentTheme.tagline} — Live Scoreboard</p>
+          </div>
         </div>
 
         <div className="flex items-center gap-4">
-          <div className="flex gap-2 bg-slate-800 rounded-lg p-1">
+          <div className="flex gap-2 rounded-lg p-1" style={{ backgroundColor: 'rgba(0, 0, 0, 0.3)' }}>
             <button
               onClick={() => setState(s => ({ ...s, displayType: 'standings' }))}
-              className={`px-4 py-2 rounded font-semibold text-sm transition ${
-                state.displayType === 'standings'
-                  ? 'bg-blue-600 text-white'
-                  : 'text-gray-400 hover:text-white'
-              }`}
+              className="px-4 py-2 rounded font-semibold text-sm transition"
+              style={{
+                backgroundColor: state.displayType === 'standings' ? currentTheme.colors.accent : 'transparent',
+                color: state.displayType === 'standings' ? currentTheme.colors.text : 'rgba(255, 255, 255, 0.7)',
+              }}
             >
               Standings
             </button>
             <button
               onClick={() => setState(s => ({ ...s, displayType: 'stats' }))}
-              className={`px-4 py-2 rounded font-semibold text-sm transition ${
-                state.displayType === 'stats'
-                  ? 'bg-blue-600 text-white'
-                  : 'text-gray-400 hover:text-white'
-              }`}
+              className="px-4 py-2 rounded font-semibold text-sm transition"
+              style={{
+                backgroundColor: state.displayType === 'stats' ? currentTheme.colors.accent : 'transparent',
+                color: state.displayType === 'stats' ? currentTheme.colors.text : 'rgba(255, 255, 255, 0.7)',
+              }}
             >
               Stats
             </button>
@@ -155,11 +173,11 @@ export default function ScoreboardDisplay() {
               <button
                 onClick={handleShare}
                 title={shareCopied ? 'Link copied!' : 'Share spectator link'}
-                className={`flex items-center gap-1.5 px-3 py-2 rounded text-sm font-medium transition ${
-                  shareCopied
-                    ? 'bg-green-700 text-white'
-                    : 'bg-slate-800 hover:bg-slate-700 text-gray-200'
-                }`}
+                className="flex items-center gap-1.5 px-3 py-2 rounded text-sm font-medium transition"
+                style={{
+                  backgroundColor: shareCopied ? 'rgba(76, 175, 80, 0.8)' : 'rgba(0, 0, 0, 0.2)',
+                  color: 'white',
+                }}
               >
                 {shareCopied ? <Check size={16} /> : <Share2 size={16} />}
                 {shareCopied ? 'Copied!' : 'Share'}
@@ -169,7 +187,8 @@ export default function ScoreboardDisplay() {
             <button
               onClick={() => setState(s => ({ ...s, autoRefresh: !s.autoRefresh }))}
               title={state.autoRefresh ? 'Pause auto-refresh' : 'Resume auto-refresh'}
-              className="p-2 bg-slate-800 hover:bg-slate-700 rounded transition"
+              className="p-2 rounded transition"
+              style={{ backgroundColor: 'rgba(0, 0, 0, 0.2)', color: 'white' }}
             >
               {state.autoRefresh ? <Pause size={20} /> : <Play size={20} />}
             </button>
@@ -177,7 +196,8 @@ export default function ScoreboardDisplay() {
             <button
               onClick={toggleFullscreen}
               title="Fullscreen"
-              className="p-2 bg-slate-800 hover:bg-slate-700 rounded transition"
+              className="p-2 rounded transition"
+              style={{ backgroundColor: 'rgba(0, 0, 0, 0.2)', color: 'white' }}
             >
               ⛶
             </button>
@@ -185,17 +205,20 @@ export default function ScoreboardDisplay() {
             <button
               onClick={() => setRefreshCount(c => c + 1)}
               title="Refresh now"
-              className="p-2 bg-slate-800 hover:bg-slate-700 rounded transition"
+              className="p-2 rounded transition"
+              style={{ backgroundColor: 'rgba(0, 0, 0, 0.2)', color: 'white' }}
             >
               <RotateCcw size={20} />
             </button>
           </div>
 
           {shareError && (
-            <div className="text-xs text-red-400">{shareError}</div>
+            <div className="text-xs" style={{ color: 'rgba(255, 100, 100, 0.9)' }}>
+              {shareError}
+            </div>
           )}
 
-          <div className="text-xs text-gray-500">
+          <div className="text-xs" style={{ color: 'rgba(255, 255, 255, 0.6)' }}>
             Auto-refresh: {state.autoRefresh ? `${state.refreshInterval}s` : 'OFF'}
             {refreshCount > 0 && ` (${refreshCount})`}
           </div>
