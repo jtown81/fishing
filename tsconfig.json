@@ -27,7 +27,8 @@
       "@styles/*": ["src/styles/*"],
       "@lib/*": ["src/lib/*"],
       "@store/*": ["src/store/*"],
-      "@config/*": ["src/config/*"]
+      "@config/*": ["src/config/*"],
+      "@data/*": ["src/data/*"]
     },
 
     /* Linting */
