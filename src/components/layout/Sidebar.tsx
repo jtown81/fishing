@@ -16,6 +16,7 @@ import {
 import { useTournamentStore } from '@modules/tournaments/tournament-store'
 import { useSubscriptionStore } from '@modules/subscription'
 import { useThemeStore } from '@store/theme-store'
+import { useResponsive } from '@hooks/useResponsive'
 
 type AppView = 'dashboard' | 'statistics' | 'calcutta' | 'scoreboard' | 'reports' | 'setup' | 'teams' | 'weigh-in' | 'import-export' | 'settings' | 'anglers' | 'angler-detail' | 'admin'
 
@@ -42,6 +43,7 @@ export default function Sidebar({
   const currentTournament = useTournamentStore((s) => s.currentTournament)
   const { tier } = useSubscriptionStore()
   const { currentTheme } = useThemeStore()
+  const { isMobile } = useResponsive()
 
   const navItems: NavItem[] = [
     {
@@ -181,8 +183,10 @@ export default function Sidebar({
                   key={item.view}
                   onClick={() => !isDisabled && handleNavClick(item.view)}
                   disabled={isDisabled}
-                  className="w-full flex items-center gap-3 px-4 py-2 rounded-lg transition-all duration-200"
+                  className="w-full flex items-center gap-3 rounded-lg transition-all duration-200"
                   style={{
+                    padding: isMobile ? '10px 12px' : '8px 16px',
+                    minHeight: isMobile ? '44px' : 'auto',
                     backgroundColor: isActive
                       ? `${currentTheme.colors.accent}dd`
                       : isDisabled
@@ -191,10 +195,11 @@ export default function Sidebar({
                     color: isDisabled ? 'rgba(255, 255, 255, 0.5)' : 'white',
                     cursor: isDisabled ? 'not-allowed' : 'pointer',
                     transform: isActive ? 'translateX(4px)' : 'translateX(0)',
+                    fontSize: isMobile ? '0.875rem' : '0.875rem',
                   }}
                 >
                   {item.icon}
-                  <span className="text-sm font-medium">{item.label}</span>
+                  <span className="font-medium">{item.label}</span>
                 </button>
               )
             })}

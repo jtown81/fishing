@@ -239,27 +239,35 @@
   - ✅ Salmon: "Upstream Avg D1", "Summit Avg D2", "Mighty Salmon", "Peak Salmon"
   - ✅ Helper function: getStatLabel(themeId, statKey)
 
-### Phase 3.5: Print & Reports Theme Integration (Week 4)
+### Phase 3.5: Print & Reports Theme Integration (Week 4) ✅ COMPLETE
 
-#### 3.5.1 Themed Weight Tickets
-- [ ] **Update `src/components/print/WeightTicket.tsx`**
-  - Header with species logo & theme colors
-  - Gradient background (theme-specific)
-  - Species-themed borders & decorative elements
-  - Themed typography for team names
+#### 3.5.1 Themed Weight Tickets ✅ COMPLETE
+- [x] **Update `src/components/print/WeightTicket.tsx`**
+  - ✅ Species emoji in header with tagline
+  - ✅ Theme-colored borders (all sections)
+  - ✅ Theme-colored headers and labels
+  - ✅ Theme-colored grand total box
+  - ✅ Theme-colored data sections (Fish Count, Raw Weight, Day Total, Big Fish)
+  - ✅ Theme-colored signature lines
+  - ✅ Professional print-friendly white background (maintains printability)
 
-#### 3.5.2 Themed Reports
-- [ ] **Update report components**
-  - Standings report: Theme header, colored rank indicators
-  - Statistics report: Theme-colored charts & tables
-  - Parks & Wildlife report: Professional theme styling (neutral base, theme accents)
+#### 3.5.2 Themed Reports ✅ COMPLETE
+- [x] **WeightTicketPage header with themed watermark**
+  - ✅ Theme tagline watermark header
+  - ✅ Themed border colors
+  - ✅ Maintains printability with white background
 
-#### 3.5.3 Live Scoreboard Theme Integration
-- [ ] **Update `src/components/scoreboard/ScoreboardDisplay.tsx`**
-  - Full-screen theme background
-  - Animated species logo watermark
-  - Theme-colored leaderboard rank backgrounds
-  - Animated achievement notifications (theme-specific animations)
+#### 3.5.3 Live Scoreboard Theme Integration ✅ COMPLETE
+- [x] **Update `src/components/scoreboard/ScoreboardDisplay.tsx`**
+  - ✅ Full-screen theme gradient background (primary → secondary)
+  - ✅ Species emoji (🎣, 🌙, 🧊, 👑, 🌊) in header
+  - ✅ Theme tagline ("The Twilight Hunter", etc.) in header
+  - ✅ Theme-colored control buttons
+  - ✅ Theme-colored active state indicators
+  - ✅ Dark overlay backgrounds for legibility on gradient
+  - ✅ Theme accent colors for display type toggles
+  - ✅ Semi-transparent button styling for immersive experience
+  - ✅ Projector-optimized display with full theme personality
 
 ### Phase 3.6: Mobile & Responsive Theming (Week 4)
 

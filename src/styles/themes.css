@@ -333,6 +333,98 @@
   animation: scale-in 500ms ease-out;
 }
 
+/* ===== MOBILE & RESPONSIVE OPTIMIZATIONS ===== */
+
+/* Reduce animation complexity on mobile devices */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Mobile optimization: Disable animations on small screens by default */
+@media (max-width: 768px) {
+  [data-animate='true'] {
+    animation: none !important;
+  }
+
+  [data-ripple='true'] {
+    animation: none !important;
+  }
+
+  [data-wave='true'] {
+    animation: none !important;
+  }
+
+  [data-shake='true'] {
+    animation: none !important;
+  }
+
+  [data-sparkle='true'] {
+    animation: none !important;
+  }
+
+  /* Optimize touch targets for mobile */
+  button {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  .theme-badge {
+    padding: 6px 12px;
+    font-size: 0.85rem;
+  }
+
+  /* Simplify transitions on mobile for performance */
+  .transition-all {
+    transition: all 100ms ease !important;
+  }
+}
+
+/* Extra small screens: further optimize */
+@media (max-width: 480px) {
+  /* Reduce header padding on very small screens */
+  header {
+    padding: 8px 12px !important;
+  }
+
+  /* Stack controls vertically on very small screens */
+  .flex-col\@xs {
+    flex-direction: column;
+  }
+
+  /* Reduce font sizes on very small screens */
+  h1 {
+    font-size: 1.25rem;
+  }
+
+  h2 {
+    font-size: 1.1rem;
+  }
+
+  /* Optimize card padding */
+  .theme-card {
+    padding: 8px;
+  }
+}
+
+/* ===== DARK MODE SUPPORT (OPTIONAL) ===== */
+
+/* Detect dark mode preference */
+@media (prefers-color-scheme: dark) {
+  /* Optional: Adjust theme colors for better dark mode contrast */
+  /* This is disabled by default but can be enabled per theme */
+
+  /* Example dark mode adjustment (commented out):
+  [data-theme='walleye'] {
+    --color-background: #1a1510;
+    filter: brightness(0.9);
+  }
+  */
+}
+
 /* ===== THEME-AWARE COMPONENTS ===== */
 
 /* Gradient backgrounds using theme colors */
