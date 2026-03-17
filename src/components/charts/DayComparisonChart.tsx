@@ -18,14 +18,24 @@ import {
   ReferenceLine
 } from 'recharts'
 import { formatWeight } from '@utils/formatting'
+import { useThemeStore } from '@store/theme-store'
 
 export default function DayComparisonChart() {
   const standings = useStandings()
+  const { currentTheme } = useThemeStore()
 
   if (standings.length === 0) {
     return (
-      <div className="bg-white rounded-lg shadow p-6 h-96 flex items-center justify-center border border-gray-200">
-        <p className="text-gray-500">No weigh-in data available</p>
+      <div
+        className="rounded-lg shadow p-6 h-96 flex items-center justify-center border-2"
+        style={{
+          backgroundColor: 'white',
+          borderColor: currentTheme.colors.border,
+        }}
+      >
+        <p style={{ color: currentTheme.colors.text, opacity: 0.6 }}>
+          No weigh-in data available
+        </p>
       </div>
     )
   }
@@ -45,51 +55,69 @@ export default function DayComparisonChart() {
   const avgDay2 = data.reduce((sum, d) => sum + d.day2, 0) / data.length
 
   return (
-    <div className="bg-white rounded-lg shadow p-6 border border-gray-200">
+    <div
+      className="rounded-lg shadow p-6 border-2"
+      style={{
+        backgroundColor: 'white',
+        borderColor: currentTheme.colors.border,
+      }}
+    >
       <div className="mb-4">
-        <h3 className="text-lg font-bold text-gray-900">Day 1 vs Day 2 Performance</h3>
-        <p className="text-sm text-gray-600 mt-1">
+        <h3 className="text-lg font-bold" style={{ color: currentTheme.colors.primary }}>
+          Day 1 vs Day 2 Performance
+        </h3>
+        <p className="text-sm mt-1" style={{ color: currentTheme.colors.text, opacity: 0.6 }}>
           Bubble size represents grand total weight
         </p>
       </div>
 
       <ResponsiveContainer width="100%" height={350}>
         <ScatterChart margin={{ top: 20, right: 30, left: 10, bottom: 50 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+          <CartesianGrid strokeDasharray="3 3" stroke={currentTheme.colors.border} />
           <XAxis
             type="number"
             dataKey="day1"
             name="Day 1 Total"
             label={{ value: 'Day 1 Total (lbs)', position: 'insideBottomRight', offset: -10 }}
-            tick={{ fontSize: 12 }}
+            tick={{ fontSize: 12, fill: currentTheme.colors.text }}
+            stroke={currentTheme.colors.border}
           />
           <YAxis
             type="number"
             dataKey="day2"
             name="Day 2 Total"
             label={{ value: 'Day 2 Total (lbs)', angle: -90, position: 'insideLeft' }}
-            tick={{ fontSize: 12 }}
+            tick={{ fontSize: 12, fill: currentTheme.colors.text }}
+            stroke={currentTheme.colors.border}
           />
           <Tooltip
             contentStyle={{
-              backgroundColor: '#fff',
-              border: '1px solid #e5e7eb',
-              borderRadius: '8px'
+              backgroundColor: 'white',
+              border: `2px solid ${currentTheme.colors.border}`,
+              borderRadius: '8px',
             }}
             cursor={{ strokeDasharray: '3 3' }}
             content={({ active, payload }) => {
               if (active && payload && payload[0]) {
                 const data = payload[0].payload
                 return (
-                  <div className="bg-white p-3 border border-gray-200 rounded shadow-lg">
-                    <p className="font-semibold text-gray-900">{data.name}</p>
-                    <p className="text-sm text-gray-600">
+                  <div
+                    className="p-3 rounded shadow-lg border-2"
+                    style={{
+                      backgroundColor: 'white',
+                      borderColor: currentTheme.colors.border,
+                    }}
+                  >
+                    <p className="font-semibold" style={{ color: currentTheme.colors.primary }}>
+                      {data.name}
+                    </p>
+                    <p className="text-sm mt-1" style={{ color: currentTheme.colors.text, opacity: 0.7 }}>
                       Day 1: {formatWeight(data.day1)}
                     </p>
-                    <p className="text-sm text-gray-600">
+                    <p className="text-sm" style={{ color: currentTheme.colors.text, opacity: 0.7 }}>
                       Day 2: {formatWeight(data.day2)}
                     </p>
-                    <p className="text-sm text-gray-600">
+                    <p className="text-sm" style={{ color: currentTheme.colors.primary }}>
                       Total: {formatWeight(data.grandTotal)}
                     </p>
                   </div>
@@ -100,28 +128,32 @@ export default function DayComparisonChart() {
           />
           <ReferenceLine
             x={avgDay1}
-            stroke="#9ca3af"
+            stroke={currentTheme.colors.accent}
             strokeDasharray="5 5"
-            label={{ value: `Avg Day 1: ${formatWeight(avgDay1)}`, position: 'top' }}
+            label={{ value: `Avg Day 1: ${formatWeight(avgDay1)}`, position: 'top', fill: currentTheme.colors.text }}
           />
           <ReferenceLine
             y={avgDay2}
-            stroke="#9ca3af"
+            stroke={currentTheme.colors.accent}
             strokeDasharray="5 5"
-            label={{ value: `Avg Day 2: ${formatWeight(avgDay2)}`, position: 'left' }}
+            label={{ value: `Avg Day 2: ${formatWeight(avgDay2)}`, position: 'left', fill: currentTheme.colors.text }}
           />
-          <Scatter name="Teams" data={data} fill="#3b82f6" />
+          <Scatter name="Teams" data={data} fill={currentTheme.colors.primary} />
         </ScatterChart>
       </ResponsiveContainer>
 
       <div className="mt-4 grid grid-cols-2 gap-4 text-sm">
         <div>
-          <p className="text-gray-600">Day 1 Average</p>
-          <p className="text-lg font-bold text-gray-900">{formatWeight(avgDay1)}</p>
+          <p style={{ color: currentTheme.colors.text, opacity: 0.6 }}>Day 1 Average</p>
+          <p className="text-lg font-bold mt-1" style={{ color: currentTheme.colors.primary }}>
+            {formatWeight(avgDay1)}
+          </p>
         </div>
         <div>
-          <p className="text-gray-600">Day 2 Average</p>
-          <p className="text-lg font-bold text-gray-900">{formatWeight(avgDay2)}</p>
+          <p style={{ color: currentTheme.colors.text, opacity: 0.6 }}>Day 2 Average</p>
+          <p className="text-lg font-bold mt-1" style={{ color: currentTheme.colors.primary }}>
+            {formatWeight(avgDay2)}
+          </p>
         </div>
       </div>
     </div>

@@ -5,67 +5,62 @@
 
 import { useTournamentStats } from '@modules/stats'
 import { formatWeight, formatNumber, formatPercent } from '@utils/formatting'
-import { Fish, TrendingUp, Target, Zap, Percent, Users } from 'lucide-react'
+import { useThemeStore } from '@store/theme-store'
 
 export default function StatsSummaryCards() {
   const { coreStats, enhancedStats } = useTournamentStats()
+  const { currentTheme } = useThemeStore()
+
+  const cardEmojis = ['🎣', '🎯', '🏆', '📊', '✨', '📈', '👥', '🐟']
 
   const cards = [
     {
       label: 'Avg Day 1 Weight',
       value: formatWeight(coreStats.avgDay1Weight),
       subtext: `±${formatWeight(coreStats.day1StdDev)}`,
-      icon: Fish,
-      color: 'bg-blue-50 text-blue-600'
+      emoji: cardEmojis[0]
     },
     {
       label: 'Avg Day 2 Weight',
       value: formatWeight(coreStats.avgDay2Weight),
       subtext: `±${formatWeight(coreStats.day2StdDev)}`,
-      icon: Fish,
-      color: 'bg-cyan-50 text-cyan-600'
+      emoji: cardEmojis[1]
     },
     {
       label: 'Big Fish Day 1',
       value: coreStats.bigFishDay1 ? formatWeight(coreStats.bigFishDay1) : '—',
       subtext: 'Tournament record',
-      icon: Target,
-      color: 'bg-amber-50 text-amber-600'
+      emoji: cardEmojis[2]
     },
     {
       label: 'Big Fish Day 2',
       value: coreStats.bigFishDay2 ? formatWeight(coreStats.bigFishDay2) : '—',
       subtext: 'Tournament record',
-      icon: Target,
-      color: 'bg-orange-50 text-orange-600'
+      emoji: cardEmojis[3]
     },
     {
       label: 'Total Fish Caught',
       value: formatNumber(coreStats.totalFishCaught),
       subtext: `Released: ${formatNumber(coreStats.totalFishReleased)}`,
-      icon: Zap,
-      color: 'bg-green-50 text-green-600'
+      emoji: cardEmojis[4]
     },
     {
       label: 'Release Rate',
       value: formatPercent(enhancedStats.releaseRate),
       subtext: 'Catch & release %',
-      icon: Percent,
-      color: 'bg-teal-50 text-teal-600'
+      emoji: cardEmojis[5]
     },
     {
       label: 'Avg Catch/Team',
       value: formatNumber(enhancedStats.catchPerTeam, 1),
       subtext: 'fish per team',
-      icon: TrendingUp,
-      color: 'bg-violet-50 text-violet-600'
+      emoji: cardEmojis[6]
     },
     {
       label: 'Teams Fishing',
       value: `${coreStats.teamsWithFish}/${coreStats.totalTeams}`,
       subtext: `${formatPercent((coreStats.teamsWithFish / coreStats.totalTeams) * 100)}`,
-      icon: Users,
-      color: 'bg-rose-50 text-rose-600'
+      emoji: cardEmojis[7]
     }
   ]
 
@@ -74,19 +69,30 @@ export default function StatsSummaryCards() {
       {cards.map((card) => (
         <div
           key={card.label}
-          className={`${card.color} rounded-lg p-4 border border-current border-opacity-20`}
+          className="rounded-lg p-4 border-2 transition-all duration-200 hover:shadow-lg"
+          style={{
+            backgroundColor: currentTheme.colors.background,
+            borderColor: currentTheme.colors.border,
+          }}
         >
           <div className="flex items-start justify-between">
             <div className="flex-1">
-              <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
+              <p
+                className="text-xs font-semibold uppercase tracking-wide"
+                style={{ color: currentTheme.colors.text }}
+              >
                 {card.label}
               </p>
-              <p className="text-2xl font-bold text-gray-900 mt-2">{card.value}</p>
+              <p className="text-2xl font-bold mt-2" style={{ color: currentTheme.colors.primary }}>
+                {card.value}
+              </p>
               {card.subtext && (
-                <p className="text-xs text-gray-600 mt-1">{card.subtext}</p>
+                <p className="text-xs mt-1" style={{ color: currentTheme.colors.text, opacity: 0.7 }}>
+                  {card.subtext}
+                </p>
               )}
             </div>
-            <card.icon size={24} className="flex-shrink-0 opacity-40" />
+            <div className="flex-shrink-0 text-3xl opacity-60">{card.emoji}</div>
           </div>
         </div>
       ))}
